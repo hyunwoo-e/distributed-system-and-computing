@@ -10,6 +10,7 @@ public class ElectionManager extends Thread implements MessageDefination {
 			Thread.currentThread();
 	}
 	
+	/* Coordinator 설정 */
 	public void setCoordinator(String coordinator) {
 		Common.coordinator = coordinator;
 		Common.isAlive = true;
@@ -77,6 +78,7 @@ public class ElectionManager extends Thread implements MessageDefination {
 	}
 	
 	public void run() {	
+		/* 진입 시 Election을 요청 */
 		send_election();
 		
 		while(!Thread.interrupted()) {

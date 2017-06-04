@@ -18,7 +18,7 @@ public class Sender extends Thread implements MessageDefination {
 		
 		while(!Thread.interrupted()) {
 			try {	
-				 msg = MessageQueue.dequeue();
+				msg = MessageQueue.dequeue();
 				if (msg != null) {
 					socket = new Socket();
 					socket.connect(new InetSocketAddress(msg.getReceiver(), port), SOCKET_TIMEOUT);
