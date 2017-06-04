@@ -3,13 +3,13 @@ package server;
 public class Timer extends Thread implements Timable {
 
 	private String type;
-	private Object Manager;
+	private Object manager;
 	
 	private float elapsed_time;
 	private float expire_time;
 	
-	public Timer(Object Manager, String type) {
-		this.Manager = Manager;
+	public Timer(Object manager, String type) {
+		this.manager = manager;
 		this.type = type;
 		
 		switch (type) {
@@ -47,6 +47,14 @@ public class Timer extends Thread implements Timable {
 	}
 
 	public void timeout(String type) {
-		((Timable)Manager).timeout(type);
+		((Timable)manager).timeout(type);
+	}
+	
+	public void startTimer(String type) {
+
+	}
+	
+	public void stopTimer() {
+
 	}
 }

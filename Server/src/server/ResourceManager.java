@@ -10,7 +10,7 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 	}
 	
 	public void timeout(String type) {
-		update();
+		update_nodes();
 		if(Server.getCoordinator().equals(Server.getMyAddr())) {
 			startTimer("HEARTBEAT");
 			//refreshTimer();
@@ -19,7 +19,7 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 		}
 	}
 	
-	public synchronized void update() {
+	public synchronized void update_nodes() {
 		/* ConcurrentModification 해결을 위해 복사 */
 		HashMap<String, Integer> temp = (HashMap<String, Integer>)Server.getAliveServerMap().clone();
 		
@@ -30,11 +30,11 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 				System.out.println(entry.getKey() + " Down");
 			}
 		}
-		Server.update_node(temp);
+		Server.setAliveServerMap(temp);
 	}
 	
-	public synchronized void respond_heartbeat(String ip) {
-		Server.update_node(ip);
+	public synchronized void update_nodes(String ip) {
+		Server.setAliveServerMap(ip);
 	}
 	
 	public void startTimer(String type) {
@@ -57,7 +57,7 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 		Thread.currentThread();
 		while(!Thread.interrupted()) {
 			Message msg = super.release();
-			respond_heartbeat(msg.getAddr());
+			update_nodes(msg.getAddr());
 		}
 		
 		stopTimer();

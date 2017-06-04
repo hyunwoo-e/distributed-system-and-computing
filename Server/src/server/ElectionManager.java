@@ -57,6 +57,10 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 		send_election();
 	}
 	
+	public void respond_election(Message rmsg){
+		send_ok(rmsg);
+	}
+	
 	/* 자신의 index보다 큰 서버에 Election 메시지를 전송 */
 	public void send_election() {
 		for(int i = Server.getMyIndex() + 1 ; i < Server.getTotalServerList().size(); i++) {

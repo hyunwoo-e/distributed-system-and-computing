@@ -4,7 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-public class Server extends PassiveQueue<Message> implements Runnable {
+public class Server implements Runnable {
 	private static ArrayList<String> totalServerList;
 	private static String myAddr;
 	private static int myIndex;
@@ -28,8 +28,6 @@ public class Server extends PassiveQueue<Message> implements Runnable {
 	
 	private final int port = 10001;	
 	private ServerSocket serverSocket;
-	private Socket socket;
-	private DataInputStream dis;
 		
 	public Server() {
 		try {
@@ -145,7 +143,7 @@ public class Server extends PassiveQueue<Message> implements Runnable {
 		return aliveServerMap;
 	}
 	
-	public static synchronized void update_node(HashMap<String, Integer> temp) {	
+	public static synchronized void setAliveServerMap(HashMap<String, Integer> temp) {	
 		for(Map.Entry<String, Integer> entry : aliveServerMap.entrySet()) {
 			System.out.println(entry.getKey() + " " +entry.getValue());
 		}
@@ -154,7 +152,7 @@ public class Server extends PassiveQueue<Message> implements Runnable {
 		aliveServerCount = aliveServerMap.size();
 	}
 	
-	public static synchronized void update_node(String ip) {
+	public static synchronized void setAliveServerMap(String ip) {
 		aliveServerMap.put(ip, 0);
 		aliveServerCount = aliveServerMap.size();
 	}
@@ -174,7 +172,7 @@ public class Server extends PassiveQueue<Message> implements Runnable {
 	private static synchronized void stop_election_manager() {
 		if(electionManager != null) {
 			electionManagerThread.interrupt();
-			/* notify를 2번 하기 위함 -> 1번만 notify할 시 아주 드물게 Context Switching으로 오작동 가능 */
+			/* notify를 2번 하기 위함 */
 			electionManager.accept(new Message("","","",""));
 			electionManager.accept(new Message("","","",""));
 			electionManagerThread = null;
@@ -196,7 +194,7 @@ public class Server extends PassiveQueue<Message> implements Runnable {
 	private static synchronized void stop_resource_manager() {
 		if(resourceManager != null) {
 			resourceManagerThread.interrupt();
-			/* notify를 2번 하기 위함 -> 1번만 notify할 시 아주 드물게 Context Switching으로 오작동 가능 */
+			/* notify를 2번 하기 위함 */
 			resourceManager.accept(new Message("","","",""));
 			resourceManager.accept(new Message("","","",""));
 			resourceManagerThread = null;
@@ -238,8 +236,8 @@ public class Server extends PassiveQueue<Message> implements Runnable {
 			 * 작업 분배 및 종합할 수 있는 로직이 필요함. */
 			
 			try {
-				socket = serverSocket.accept();
-				dis = new DataInputStream(socket.getInputStream());
+				Socket socket = serverSocket.accept();
+				DataInputStream dis = new DataInputStream(socket.getInputStream());
 
 				String type = dis.readUTF();
 				String flag = dis.readUTF();

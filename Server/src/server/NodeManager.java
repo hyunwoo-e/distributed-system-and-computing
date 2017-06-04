@@ -6,7 +6,7 @@ public class NodeManager extends PassiveQueue<Message> implements Runnable, Tima
 
 	}
 	
-	public void send_heartbeating() {
+	public void send_heartbeat() {
 		Message smsg = new Message("HEARTBEAT", "", Server.getCoordinator(), "");
 		Server.mQ.accept(smsg);
 	}
@@ -16,7 +16,7 @@ public class NodeManager extends PassiveQueue<Message> implements Runnable, Tima
 		while(!Thread.interrupted()) {
 			try {
 				Thread.sleep(TIMER_TICK * 5);
-				send_heartbeating();
+				send_heartbeat();
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
@@ -27,5 +27,13 @@ public class NodeManager extends PassiveQueue<Message> implements Runnable, Tima
 
 	public void timeout(String type) {
 		
+	}
+	
+	public void startTimer(String type) {
+
+	}
+	
+	public void stopTimer() {
+
 	}
 }

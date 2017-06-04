@@ -1,6 +1,8 @@
 package server;
 
 public interface Timable {
+	public void startTimer(String type);
+	public void stopTimer();
 	public void timeout(String type);
 	
 	public final int TIMER_TICK = 500;
