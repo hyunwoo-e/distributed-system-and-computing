@@ -1,13 +1,13 @@
 package server;
 
-public class NodeManager extends PassiveQueue<Message> implements Runnable, Timable {
+public class NodeManager implements Runnable, Timable {
 	
 	public NodeManager() {
 
 	}
 	
 	public void send_heartbeat() {
-		Message smsg = new Message("HEARTBEAT", "", Server.getCoordinator(), "");
+		Message smsg = new Message("HEARTBEAT", "HEARTBEAT", Server.getCoordinator(), "");
 		Server.mQ.accept(smsg);
 	}
 	

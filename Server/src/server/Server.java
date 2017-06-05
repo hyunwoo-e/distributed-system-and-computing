@@ -111,6 +111,7 @@ public class Server implements Runnable {
 			/* 자신이 Coordinator가 아닐 경우 ResourceManager를 종료 */
 			stop_resource_manager();
 		}
+		
 		start_node_manager();
 	}
 	
@@ -162,19 +163,13 @@ public class Server implements Runnable {
 			electionManager = new ElectionManager();
 			electionManagerThread = new Thread(electionManager);
 			electionManagerThread.start();
-			
-			/* 진입 시 Election을 요청 */
-			electionManager.start_election();
 			electionIsStarted = true;
 		}
 	}
 	
 	private static synchronized void stop_election_manager() {
 		if(electionManager != null) {
-			electionManagerThread.interrupt();
-			/* notify를 2번 하기 위함 */
-			electionManager.accept(new Message("","","",""));
-			electionManager.accept(new Message("","","",""));
+			electionManager.accept(new Message("ELECTION","EXIT","",""));
 			electionManagerThread = null;
 			electionManager = null;
 		}
@@ -193,10 +188,7 @@ public class Server implements Runnable {
 	
 	private static synchronized void stop_resource_manager() {
 		if(resourceManager != null) {
-			resourceManagerThread.interrupt();
-			/* notify를 2번 하기 위함 */
-			resourceManager.accept(new Message("","","",""));
-			resourceManager.accept(new Message("","","",""));
+			resourceManager.accept(new Message("HEARTBEAT","EXIT","",""));
 			resourceManagerThread = null;
 			resourceManager = null;
 		}
@@ -263,6 +255,10 @@ public class Server implements Runnable {
 				
 			}
 		}
+
+		stop_node_manager();
+		stop_resource_manager();
+		stop_election_manager();
 		
 		try {
 			serverSocket.close();

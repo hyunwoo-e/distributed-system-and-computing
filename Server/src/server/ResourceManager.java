@@ -4,19 +4,15 @@ import java.util.*;
 
 public class ResourceManager extends PassiveQueue<Message> implements Runnable, Timable {
 	private Timer timer;
+	private boolean shouldStop;
 	
 	public ResourceManager() {
 		
 	}
 	
 	public void timeout(String type) {
-		update_nodes();
-		if(Server.getCoordinator().equals(Server.getMyAddr())) {
-			startTimer("HEARTBEAT");
-			//refreshTimer();
-		} else {
-			stopTimer();
-		}
+		Message msg = new Message("ELECTION", "TIMEOUT", "", "OK");
+		super.accept(msg);
 	}
 	
 	public synchronized void update_nodes() {
@@ -54,14 +50,24 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 	public void run() {	
 		startTimer("HEARTBEAT");
 		
-		Thread.currentThread();
-		while(!Thread.interrupted()) {
+		while(!shouldStop) {
 			Message msg = super.release();
-			update_nodes(msg.getAddr());
+			switch(msg.getFlag()) {
+				case "HEARTBEAT":
+					update_nodes(msg.getAddr());
+					break;
+				case "TIMEOUT":
+					update_nodes();
+					startTimer("HEARTBEAT");
+					break;
+				case "EXIT":
+					stopTimer();
+					shouldStop = true;
+					break;
+			}
 		}
 		
 		stopTimer();
 		System.out.println("RESOURCE MANAGER IS DOWN");
-	}
-	
+	}	
 }

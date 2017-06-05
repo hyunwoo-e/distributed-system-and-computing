@@ -2,29 +2,32 @@ package server;
 
 public class ElectionManager extends PassiveQueue<Message> implements Runnable, Timable {
 	private Timer timer;
+	private boolean shouldStop;
 
 	public ElectionManager() {
-			
+		shouldStop = false;
 	}
 	
 	/* Election 메시지를 보내고 응답이 없으면 자신이 Coordinator가 됨
 	 * Ok 메시지를 받고 Coordinator 메시지를 일정 시간 내에 받지 못하면 Election을 다시 시작 */
 	public void timeout(String type) {
+		Message msg;
 		switch (type) {
 			case "ELECTION" :
 				System.out.println("TIMEOUT(ELECTION)");
-				send_coordinator();
+				msg = new Message("ELECTION", "TIMEOUT", "", "ELECTION");
+				super.accept(msg);
 				break;
 			case "OK" :
 				System.out.println("TIMEOUT(OK)");
-				start_election();
+				msg = new Message("ELECTION", "TIMEOUT", "", "OK");
+				super.accept(msg);
 				break;
 		}
 	}
 	
 	public void start_election() {
-		Server.setElectionIsStarted(true);
-		
+		Server.setElectionIsStarted(true);		
 		Message msg = new Message("ELECTION", "START", "", "");
 		super.accept(msg);
 	}
@@ -86,8 +89,11 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	}
 	
 	public void run() {
-		Thread.currentThread();
-		while(!Thread.interrupted()) {
+		
+		/* 진입 시 Election을 요청 */
+		start_election();
+		
+		while(!shouldStop) {
 			Message msg = super.release();
 			switch(msg.getFlag()) {
 				case "START":
@@ -95,7 +101,6 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 					break;
 				case "ELECTION" :
 					System.out.println("RECEIVE ELECTION FROM " + msg.getAddr());
-					
 					send_ok(msg);
 					System.out.println("SEND OK");
 					break;
@@ -107,6 +112,18 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 					System.out.println("RECEIVE COORDINATOR FROM " + msg.getAddr());
 					respond_coordinator(msg);
 					System.out.println("COORDINATOR : " + msg.getAddr());
+					break;
+				case "TIMEOUT":
+					if(msg.getData().equals("ELECTION")) {
+						send_coordinator();
+					}
+					else {
+						start_election();
+					}
+					break;
+				case "EXIT":
+					stopTimer();
+					shouldStop = true;
 					break;
 			}
 		}
