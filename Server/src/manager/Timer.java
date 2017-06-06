@@ -1,4 +1,4 @@
-package server;
+package manager;
 
 public class Timer extends Thread implements Timable {
 

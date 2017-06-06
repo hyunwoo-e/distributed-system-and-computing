@@ -1,4 +1,7 @@
-package server;
+package manager;
+
+import server.Message;
+import server.Server;
 
 public class NodeManager implements Runnable, Timable {
 	

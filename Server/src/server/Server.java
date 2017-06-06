@@ -4,14 +4,18 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import manager.ElectionManager;
+import manager.NodeManager;
+import manager.ResourceManager;
+
 public class Server implements Runnable {
 	private static ArrayList<String> totalServerList;
 	private static String myAddr;
 	private static int myIndex;
 	
 	private static String coordinator;
-	private static boolean coordinatorIsAlive;
-	private static boolean electionIsStarted;
+	private static boolean isCoordinatorAlive;
+	private static boolean isElectionStarted;
 	
 	private static HashMap<String, Integer> aliveServerMap;
 	private static int aliveServerCount;
@@ -83,15 +87,15 @@ public class Server implements Runnable {
 		}
 	}	
 
-	public static synchronized ArrayList<String> getTotalServerList() {
+	public static ArrayList<String> getTotalServerList() {
 		return totalServerList;
 	}
 	
-	public static synchronized String getMyAddr() {
+	public static String getMyAddr() {
 		return myAddr;
 	}
 	
-	public static synchronized int getMyIndex() {
+	public static int getMyIndex() {
 		return myIndex;
 	}
 	
@@ -101,7 +105,7 @@ public class Server implements Runnable {
 	
 	public static synchronized void setCoordinator(String c) {
 		coordinator = c;
-		setCoordinatorIsAlive(true);
+		setIsCoordinatorAlive(true);
 		if(myAddr.equals(getCoordinator()))
 		{
 			/* 자신이 Coordinator일 경우 ResourceManager를 실행 */
@@ -115,36 +119,36 @@ public class Server implements Runnable {
 		start_node_manager();
 	}
 	
-	public static synchronized void setCoordinatorIsAlive(boolean isAlive) {
-		coordinatorIsAlive = isAlive;
+	public static synchronized void setIsCoordinatorAlive(boolean isAlive) {
+		isCoordinatorAlive = isAlive;
 		
-		if(coordinatorIsAlive == true) {
-			electionIsStarted = false;
+		if(isCoordinatorAlive == true) {
+			setIsElectionStarted(false);
 		}
 
-		if(coordinatorIsAlive == false && electionIsStarted == false)
+		if(isCoordinatorAlive == false && isElectionStarted == false)
 		{
 			electionManager.start_election();
 		}
 	}
 	
-	public static synchronized boolean getCoordinatorIsAlive() {
-		return coordinatorIsAlive;
+	public static synchronized boolean getIsCoordinatorAlive() {
+		return isCoordinatorAlive;
 	}
 	
-	public static synchronized void setElectionIsStarted(boolean isStarted) {
-		electionIsStarted = isStarted;
+	public static void setIsElectionStarted(boolean isStarted) {
+		isElectionStarted = isStarted;
 	}
 	
-	public static synchronized boolean getElectionIsStarted() {
-		return electionIsStarted;
+	public static boolean getIsElectionStarted() {
+		return isElectionStarted;
 	}
 	
-	public static synchronized HashMap<String, Integer> getAliveServerMap() {
+	public static HashMap<String, Integer> getAliveServerMap() {
 		return aliveServerMap;
 	}
 	
-	public static synchronized void setAliveServerMap(HashMap<String, Integer> temp) {	
+	public static void setAliveServerMap(HashMap<String, Integer> temp) {	
 		for(Map.Entry<String, Integer> entry : aliveServerMap.entrySet()) {
 			System.out.println(entry.getKey() + " " +entry.getValue());
 		}
@@ -153,21 +157,21 @@ public class Server implements Runnable {
 		aliveServerCount = aliveServerMap.size();
 	}
 	
-	public static synchronized void setAliveServerMap(String ip) {
+	public static void setAliveServerMap(String ip) {
 		aliveServerMap.put(ip, 0);
 		aliveServerCount = aliveServerMap.size();
 	}
 	
-	private static synchronized void start_election_manager() {
+	private static void start_election_manager() {
 		if(electionManager == null) {
 			electionManager = new ElectionManager();
 			electionManagerThread = new Thread(electionManager);
 			electionManagerThread.start();
-			electionIsStarted = true;
+			isElectionStarted = true;
 		}
 	}
 	
-	private static synchronized void stop_election_manager() {
+	private static void stop_election_manager() {
 		if(electionManager != null) {
 			electionManager.accept(new Message("ELECTION","EXIT","",""));
 			electionManagerThread = null;
@@ -175,7 +179,7 @@ public class Server implements Runnable {
 		}
 	}
 	
-	private static synchronized void start_resource_manager() {
+	private static void start_resource_manager() {
 		if(resourceManager == null) {
 			aliveServerMap.clear();
 			aliveServerCount = 0;
@@ -186,7 +190,7 @@ public class Server implements Runnable {
 		}
 	}
 	
-	private static synchronized void stop_resource_manager() {
+	private static void stop_resource_manager() {
 		if(resourceManager != null) {
 			resourceManager.accept(new Message("HEARTBEAT","EXIT","",""));
 			resourceManagerThread = null;
@@ -194,7 +198,7 @@ public class Server implements Runnable {
 		}
 	}
 	
-	private static synchronized void start_node_manager() {
+	private static void start_node_manager() {
 		if(nodeManager == null) {
 			nodeManager = new NodeManager();
 			nodeManagerThread = new Thread(nodeManager);
@@ -202,7 +206,7 @@ public class Server implements Runnable {
 		}
 	}
 	
-	private static synchronized void stop_node_manager() {
+	private static void stop_node_manager() {
 		if(nodeManager != null) {
 			nodeManagerThread.interrupt();
 			nodeManagerThread = null;

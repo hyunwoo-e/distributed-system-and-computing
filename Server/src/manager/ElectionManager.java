@@ -1,4 +1,8 @@
-package server;
+package manager;
+
+import server.Message;
+import server.PassiveQueue;
+import server.Server;
 
 public class ElectionManager extends PassiveQueue<Message> implements Runnable, Timable {
 	private Timer timer;
@@ -27,7 +31,7 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	}
 	
 	public void start_election() {
-		Server.setElectionIsStarted(true);		
+		Server.setIsElectionStarted(true);		
 		Message msg = new Message("ELECTION", "START", "", "");
 		super.accept(msg);
 	}
@@ -52,15 +56,14 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	}
 	
 	/* Election 메시지를 받으면 Ok 메시지를 전송하고, 자신의 index보다 큰 서버에 Election 메시지를 전송 */
-	public void send_ok(Message rmsg) {
-		Server.setElectionIsStarted(true);
-		
+	public void send_ok(Message rmsg) {		
 		Message smsg = new Message("ELECTION", "OK", rmsg.getAddr(), "");
 		Server.mQ.accept(smsg);
 		send_election();
 	}
 	
 	public void respond_election(Message rmsg){
+		Server.setIsElectionStarted(true);
 		send_ok(rmsg);
 	}
 	

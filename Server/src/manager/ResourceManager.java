@@ -1,6 +1,10 @@
-package server;
+package manager;
 
 import java.util.*;
+
+import server.Message;
+import server.PassiveQueue;
+import server.Server;
 
 public class ResourceManager extends PassiveQueue<Message> implements Runnable, Timable {
 	private Timer timer;

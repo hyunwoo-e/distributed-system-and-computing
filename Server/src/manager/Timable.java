@@ -1,4 +1,4 @@
-package server;
+package manager;
 
 public interface Timable {
 	public void startTimer(String type);
