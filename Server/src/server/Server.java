@@ -3,10 +3,7 @@ package server;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-
-import manager.ElectionManager;
-import manager.NodeManager;
-import manager.ResourceManager;
+import manager.*;
 
 public class Server implements Runnable {
 	private static ArrayList<String> totalServerList;
@@ -148,9 +145,10 @@ public class Server implements Runnable {
 		return aliveServerMap;
 	}
 	
-	public static void setAliveServerMap(HashMap<String, Integer> temp) {	
+	public static void setAliveServerMap(HashMap<String, Integer> temp) {
+		
 		for(Map.Entry<String, Integer> entry : aliveServerMap.entrySet()) {
-			System.out.println(entry.getKey() + " " +entry.getValue());
+			System.out.println("HEARTBEATING FROM " + entry.getKey() + " TTL " + (50000 - entry.getValue()) + "ms");
 		}
 		
 		aliveServerMap = temp;

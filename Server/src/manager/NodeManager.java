@@ -1,7 +1,6 @@
 package manager;
 
-import server.Message;
-import server.Server;
+import server.*;
 
 public class NodeManager implements Runnable, Timable {
 	
@@ -18,7 +17,7 @@ public class NodeManager implements Runnable, Timable {
 		Thread.currentThread();
 		while(!Thread.interrupted()) {
 			try {
-				Thread.sleep(TIMER_TICK * 5);
+				Thread.sleep(HEARTBEAT_TICK);
 				send_heartbeat();
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();

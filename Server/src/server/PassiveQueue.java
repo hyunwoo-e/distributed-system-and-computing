@@ -1,6 +1,5 @@
 package server;
 
-
 public class PassiveQueue<E> {
 	GenericQueue<E> queue = new GenericQueue<E>();
 

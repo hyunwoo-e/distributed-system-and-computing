@@ -21,8 +21,6 @@ public class MessageQueue extends PassiveQueue<Message> implements Runnable {
 			try {
 				socket = new Socket();
 				socket.connect(new InetSocketAddress(msg.getAddr(), port), SOCKET_TIMEOUT);
-				//System.out.println(msg.getType() + " " + msg.getFlag() + " " + msg.getAddr() + " " + msg.getData());
-				//socket = new Socket(msg.getAddr(), port);
 				
 				dos = new DataOutputStream(socket.getOutputStream());
 				dos.writeUTF(msg.getType());

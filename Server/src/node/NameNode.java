@@ -3,10 +3,10 @@ package node;
 import java.util.*;
 import server.*;
 
-public class DataNode extends PassiveQueue<Message> implements Runnable {
+public class NameNode extends PassiveQueue<Message> implements Runnable {
 	private boolean shouldStop;
 	
-	public DataNode() {
+	public NameNode() {
 		
 	}
 	
@@ -21,6 +21,6 @@ public class DataNode extends PassiveQueue<Message> implements Runnable {
 			}
 		}
 		
-		System.out.println("DATA NODE IS DOWN");
+		System.out.println("NAME NODE IS DOWN");
 	}	
 }
