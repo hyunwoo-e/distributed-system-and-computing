@@ -10,7 +10,7 @@ public class NodeManager implements Runnable, Timable {
 	
 	public void send_heartbeat() {
 		Message smsg = new Message("RESOURCEMANAGER", "HEARTBEAT", Server.getCoordinator(), "");
-		Server.mQ.accept(smsg);
+		Server.getMessageQueue().accept(smsg);
 	}
 	
 	public void run() {
@@ -26,7 +26,7 @@ public class NodeManager implements Runnable, Timable {
 			}
 		}
 		
-		System.out.println("NODE MANAGER DOWN");
+		System.out.println("NODEMANAGER DOWN");
 	}
 
 	public void timeout(String type) {

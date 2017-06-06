@@ -7,7 +7,7 @@ import server.*;
 
 public class Proxy implements Runnable {
 	
-	private final int port = 10002;	
+	private final int port = 10000;	
 	public ServerSocket serverSocket;
 	
 	public Proxy() {

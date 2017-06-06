@@ -1,58 +1,57 @@
 package node;
 
-import java.io.IOException;
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.*;
-import proxy.*;
 import server.*;
+import service.*;
+import proxy.*;
 
-public class NameNode extends PassiveQueue<Message> implements Runnable {
+public class NameNode implements Runnable {
 	private boolean shouldStop;
-	private Proxy proxy;
-	private Thread proxyThread;
+	
+	private final int port = 10002;	
+	public ServerSocket serverSocket;
 	
 	public NameNode() {
-		
-	}
-	
-	private void start_proxy() {
-		if(proxy == null) {
-			proxy = new Proxy();
-			proxyThread = new Thread(proxy);
-			proxyThread.start();
+		try {
+			serverSocket = new ServerSocket(port);
+		} catch (IOException e) {
+			
 		}
 	}
 	
-	private void stop_proxy() {
-		if(proxy != null) {
+
+	public void run() {
+		System.out.println("NAMENODE UP");
+	
+		/* Coordinator는 Up, Slave만 Down 이를 고려해서 DataNode에 작업 분배 및 종합할 수 있는 로직이 필요함. */
+		
+		Thread.currentThread();
+		while(!Thread.interrupted()) {
 			try {
-				proxy.serverSocket.close();
+				Socket socket = serverSocket.accept();
+				DataInputStream dis = new DataInputStream(socket.getInputStream());
+
+				String type = dis.readUTF();
+				String flag = dis.readUTF();
+				String addr = dis.readUTF(); addr = socket.getInetAddress().toString().replaceAll("/", "");
+				String data = dis.readUTF();
+				
+				Message msg = new Message(type, flag, addr, data);
+				
+				switch (msg.getType()) {
+
+				}
+				
+				dis.close();
+				socket.close();
 			} catch (IOException e) {
 				
 			}
-			proxyThread.interrupt();
-			proxyThread = null;
-			proxy = null;
-		}
-	}
-	
-	public void run() {
-		System.out.println("NAMENODE UP");
-		
-		start_proxy();		
-		/* Coordinator는 Up, Slave만 Down 이를 고려해서 DataNode에 작업 분배 및 종합할 수 있는 로직이 필요함. */
-		
-		while(!shouldStop) {
-			Message msg = super.release();
-			switch(msg.getFlag()) {
-				case "EXIT":
-					shouldStop = true;
-					break;
-				case "":
-					break;
-			}
 		}
 		
-		stop_proxy();
 		System.out.println("NAMENODE DOWN");
 	}	
 }

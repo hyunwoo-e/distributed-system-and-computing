@@ -5,6 +5,7 @@ import java.net.*;
 import java.util.*;
 import manager.*;
 import node.*;
+import proxy.Proxy;
 
 public class Server implements Runnable {
 	private static ArrayList<String> totalServerList;
@@ -23,7 +24,8 @@ public class Server implements Runnable {
 	private static ResourceManager resourceManager;
 	private static NameNode nameNode;
 	private static DataNode dataNode;
-	public static MessageQueue mQ;
+	private static Proxy proxy;
+	private static MessageQueue messageQueue;
 	
 	private static Thread electionManagerThread;
 	private static Thread nodeManagerThread;
@@ -31,6 +33,7 @@ public class Server implements Runnable {
 	private static Thread nameNodeThread;
 	private static Thread dataNodeThread;
 	private static Thread messageQueueThread;
+	private static Thread proxyThread;
 	
 	private final int port = 10001;	
 	private ServerSocket serverSocket;
@@ -41,8 +44,8 @@ public class Server implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		mQ = new MessageQueue(port);
-		messageQueueThread = new Thread(mQ);
+		messageQueue = new MessageQueue(port);
+		messageQueueThread = new Thread(messageQueue);
 		messageQueueThread.start();
 	}
 	
@@ -89,6 +92,10 @@ public class Server implements Runnable {
 		}
 	}	
 
+	public static MessageQueue getMessageQueue() {
+		return messageQueue;
+	}
+	
 	public static ArrayList<String> getTotalServerList() {
 		return totalServerList;
 	}
@@ -187,6 +194,11 @@ public class Server implements Runnable {
 	private static void stop_election_manager() {
 		if(electionManager != null) {
 			electionManager.accept(new Message("ELECTIONMANAGER","EXIT","",""));
+			try {
+				electionManagerThread.join();
+			} catch (InterruptedException e) {
+				
+			}
 			electionManagerThread = null;
 			electionManager = null;
 		}
@@ -206,6 +218,11 @@ public class Server implements Runnable {
 	private static void stop_resource_manager() {
 		if(resourceManager != null) {
 			resourceManager.accept(new Message("RESOURCEMANAGER","EXIT","",""));
+			try {
+				resourceManagerThread.join();
+			} catch (InterruptedException e) {
+				
+			}
 			resourceManagerThread = null;
 			resourceManager = null;
 		}
@@ -222,6 +239,11 @@ public class Server implements Runnable {
 	private static void stop_node_manager() {
 		if(nodeManager != null) {
 			nodeManagerThread.interrupt();
+			try {
+				nodeManagerThread.join();
+			} catch (InterruptedException e) {
+				
+			}
 			nodeManagerThread = null;
 			nodeManager = null;
 		}
@@ -237,7 +259,19 @@ public class Server implements Runnable {
 	
 	private static void stop_name_node() {
 		if(nameNode != null) {
-			nameNode.accept(new Message("NameNode","EXIT","",""));
+			try {
+				if(nameNode.serverSocket != null) {
+					nameNodeThread.interrupt();
+					nameNode.serverSocket.close();
+					try {
+						nameNodeThread.join();
+					} catch (InterruptedException e) {
+						
+					}
+				}
+			} catch (IOException e) {
+				
+			}
 			nameNodeThread = null;
 			nameNode = null;
 		}
@@ -253,9 +287,47 @@ public class Server implements Runnable {
 	
 	private static void stop_data_node() {
 		if(dataNode != null) {
-			dataNode.accept(new Message("DataNode","EXIT","",""));
+			try {
+				if(dataNode.serverSocket != null) {
+					dataNodeThread.interrupt();
+					dataNode.serverSocket.close();
+					try {
+						dataNodeThread.join();
+					} catch (InterruptedException e) {
+						
+					}
+				}
+			} catch (IOException e) {
+				
+			}
 			dataNodeThread = null;
 			dataNode = null;
+		}
+	}
+	
+	private static void start_proxy() {
+		if(proxy == null) {
+			proxy = new Proxy();
+			proxyThread = new Thread(proxy);
+			proxyThread.start();
+		}
+	}
+	
+	private static void stop_proxy() {
+		if(proxy != null) {
+			try {
+				proxyThread.interrupt();
+				proxy.serverSocket.close();
+				try {
+					proxyThread.join();
+				} catch (InterruptedException e) {
+					
+				}
+			} catch (IOException e) {
+				
+			}
+			proxyThread = null;
+			proxy = null;
 		}
 	}
 	
@@ -292,14 +364,6 @@ public class Server implements Runnable {
 					case "RESOURCEMANAGER" :
 						if(resourceManager != null)
 							resourceManager.accept(msg);
-						break;
-					case "NAMENODE" :
-						if(nameNode != null)
-							nameNode.accept(msg);
-						break;
-					case "DATANODE" :
-						if(dataNode != null)
-							dataNode.accept(msg);
 						break;
 				}
 				

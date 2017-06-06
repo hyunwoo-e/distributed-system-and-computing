@@ -38,7 +38,7 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	public void send_coordinator() {
 		for(int i = 0 ; i <= Server.getMyIndex(); i++) {
 			Message smsg = new Message("ELECTIONMANAGER", "COORDINATOR", Server.getTotalServerList().get(i), Server.getMyAddr());
-			Server.mQ.accept(smsg);
+			Server.getMessageQueue().accept(smsg);
 		}
 	}
 	
@@ -56,7 +56,7 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	/* Election 메시지를 받으면 Ok 메시지를 전송하고, 자신의 index보다 큰 서버에 Election 메시지를 전송 */
 	public void send_ok(Message rmsg) {		
 		Message smsg = new Message("ELECTIONMANAGER", "OK", rmsg.getAddr(), "");
-		Server.mQ.accept(smsg);
+		Server.getMessageQueue().accept(smsg);
 	}
 	
 	public void respond_election(Message rmsg){
@@ -68,7 +68,7 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	public void send_election() {
 		for(int i = Server.getMyIndex() + 1 ; i < Server.getTotalServerList().size(); i++) {
 			Message smsg = new Message("ELECTIONMANAGER", "ELECTION", Server.getTotalServerList().get(i), "");
-			Server.mQ.accept(smsg);
+			Server.getMessageQueue().accept(smsg);
 		}
 		
 		startTimer("ELECTION");
