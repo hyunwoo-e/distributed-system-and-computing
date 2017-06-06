@@ -22,7 +22,7 @@ public class Timer extends Thread implements Timable {
 				expire_time = OK_TIMEOUT;
 				break;
 			case "HEARTBEAT":
-				expire_time = TIMER_TICK * 5;
+				expire_time = HEARTBEAT_TICK;
 				break;
 		}
 		

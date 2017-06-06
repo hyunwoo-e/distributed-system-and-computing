@@ -17,12 +17,12 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 		switch (type) {
 			case "ELECTION" :
 				System.out.println("TIMEOUT(ELECTION)");
-				msg = new Message("ELECTION", "TIMEOUT", "", "ELECTION");
+				msg = new Message("ELECTIONMANAGER", "TIMEOUT", "", "ELECTION");
 				super.accept(msg);
 				break;
 			case "OK" :
 				System.out.println("TIMEOUT(OK)");
-				msg = new Message("ELECTION", "TIMEOUT", "", "OK");
+				msg = new Message("ELECTIONMANAGER", "TIMEOUT", "", "OK");
 				super.accept(msg);
 				break;
 		}
@@ -30,14 +30,14 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	
 	public void start_election() {
 		Server.setIsElectionStarted(true);		
-		Message msg = new Message("ELECTION", "START", "", "");
+		Message msg = new Message("ELECTIONMANAGER", "START", "", "");
 		super.accept(msg);
 	}
 	
 	/* 자신의 index보다 작은 서버에 Coordinator 메시지를 전송 */
 	public void send_coordinator() {
 		for(int i = 0 ; i <= Server.getMyIndex(); i++) {
-			Message smsg = new Message("ELECTION", "COORDINATOR", Server.getTotalServerList().get(i), Server.getMyAddr());
+			Message smsg = new Message("ELECTIONMANAGER", "COORDINATOR", Server.getTotalServerList().get(i), Server.getMyAddr());
 			Server.mQ.accept(smsg);
 		}
 	}
@@ -55,7 +55,7 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	
 	/* Election 메시지를 받으면 Ok 메시지를 전송하고, 자신의 index보다 큰 서버에 Election 메시지를 전송 */
 	public void send_ok(Message rmsg) {		
-		Message smsg = new Message("ELECTION", "OK", rmsg.getAddr(), "");
+		Message smsg = new Message("ELECTIONMANAGER", "OK", rmsg.getAddr(), "");
 		Server.mQ.accept(smsg);
 		send_election();
 	}
@@ -68,7 +68,7 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	/* 자신의 index보다 큰 서버에 Election 메시지를 전송 */
 	public void send_election() {
 		for(int i = Server.getMyIndex() + 1 ; i < Server.getTotalServerList().size(); i++) {
-			Message smsg = new Message("ELECTION", "ELECTION", Server.getTotalServerList().get(i), "");
+			Message smsg = new Message("ELECTIONMANAGER", "ELECTION", Server.getTotalServerList().get(i), "");
 			Server.mQ.accept(smsg);
 		}
 		

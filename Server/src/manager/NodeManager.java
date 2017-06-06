@@ -9,7 +9,7 @@ public class NodeManager implements Runnable, Timable {
 	}
 	
 	public void send_heartbeat() {
-		Message smsg = new Message("HEARTBEAT", "HEARTBEAT", Server.getCoordinator(), "");
+		Message smsg = new Message("RESOURCEMANAGER", "HEARTBEAT", Server.getCoordinator(), "");
 		Server.mQ.accept(smsg);
 	}
 	

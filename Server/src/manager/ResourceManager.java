@@ -21,7 +21,7 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 		HashMap<String, Integer> temp = (HashMap<String, Integer>)Server.getAliveServerMap().clone();
 		
 		for(Map.Entry<String, Integer> entry : temp.entrySet()) {
-			entry.setValue(entry.getValue() + TIMER_TICK);
+			entry.setValue(entry.getValue() + HEARTBEAT_TICK);
 			if(entry.getValue() > HEARTBEAT_TIMEOUT) {
 				temp.remove(entry.getKey());
 				System.out.println(entry.getKey() + " Down");

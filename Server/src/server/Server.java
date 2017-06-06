@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import manager.*;
+import node.*;
 
 public class Server implements Runnable {
 	private static ArrayList<String> totalServerList;
@@ -20,11 +21,15 @@ public class Server implements Runnable {
 	private static ElectionManager electionManager;
 	private static NodeManager nodeManager;
 	private static ResourceManager resourceManager;
+	private static NameNode nameNode;
+	private static DataNode dataNode;
 	public static MessageQueue mQ;
 	
 	private static Thread electionManagerThread;
 	private static Thread nodeManagerThread;
 	private static Thread resourceManagerThread;
+	private static Thread nameNodeThread;
+	private static Thread dataNodeThread;
 	private static Thread messageQueueThread;
 	
 	private final int port = 10001;	
@@ -36,7 +41,7 @@ public class Server implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		mQ = new MessageQueue();
+		mQ = new MessageQueue(port);
 		messageQueueThread = new Thread(mQ);
 		messageQueueThread.start();
 	}
@@ -107,22 +112,30 @@ public class Server implements Runnable {
 		{
 			/* 자신이 Coordinator일 경우 ResourceManager를 실행 */
 			start_resource_manager();
+			/* 자신이 Coordinator일 경우 NameNode를 실행 */
+			start_name_node();
 		}
 		else {
 			/* 자신이 Coordinator가 아닐 경우 ResourceManager를 종료 */
 			stop_resource_manager();
+			/* 자신이 Coordinator가 아닐 경우 NameNode를 종료 */
+			stop_name_node();
 		}
-		
+		/* Coordinator가 선정되면 NodeManager를 실행 */
 		start_node_manager();
+		/* Coordinator가 선정되면 DataNode를 실행 */
+		start_data_node();
 	}
 	
 	public static synchronized void setIsCoordinatorAlive(boolean isAlive) {
 		isCoordinatorAlive = isAlive;
-		
+
+		/* Coordinator가 Up 되었을 때 Election이 종료됨 */
 		if(isCoordinatorAlive == true) {
 			setIsElectionStarted(false);
 		}
 
+		/* Coordinator가 Down 되었을 때 Election이 실행 */
 		if(isCoordinatorAlive == false && isElectionStarted == false)
 		{
 			electionManager.start_election();
@@ -146,7 +159,7 @@ public class Server implements Runnable {
 	}
 	
 	public static void setAliveServerMap(HashMap<String, Integer> temp) {
-		
+		/* HeartBeat 현재 상태를 출력 */
 		for(Map.Entry<String, Integer> entry : aliveServerMap.entrySet()) {
 			System.out.println("HEARTBEATING FROM " + entry.getKey() + " TTL " + (50000 - entry.getValue()) + "ms");
 		}
@@ -171,7 +184,7 @@ public class Server implements Runnable {
 	
 	private static void stop_election_manager() {
 		if(electionManager != null) {
-			electionManager.accept(new Message("ELECTION","EXIT","",""));
+			electionManager.accept(new Message("ELECTIONMANAGER","EXIT","",""));
 			electionManagerThread = null;
 			electionManager = null;
 		}
@@ -190,7 +203,7 @@ public class Server implements Runnable {
 	
 	private static void stop_resource_manager() {
 		if(resourceManager != null) {
-			resourceManager.accept(new Message("HEARTBEAT","EXIT","",""));
+			resourceManager.accept(new Message("RESOURCEMANAGER","EXIT","",""));
 			resourceManagerThread = null;
 			resourceManager = null;
 		}
@@ -212,6 +225,39 @@ public class Server implements Runnable {
 		}
 	}
 	
+	private static void start_name_node() {
+		if(nameNode == null) {
+			nameNode = new NameNode();
+			nameNodeThread = new Thread(nameNode);
+			nameNodeThread.start();
+		}
+	}
+	
+	private static void stop_name_node() {
+		if(nameNode != null) {
+			nameNode.accept(new Message("NameNode","EXIT","",""));
+			nameNodeThread = null;
+			nameNode = null;
+		}
+	}
+	
+	private static void start_data_node() {
+		if(dataNode == null) {
+			dataNode = new DataNode();
+			dataNodeThread = new Thread(dataNode);
+			dataNodeThread.start();
+		}
+	}
+	
+	private static void stop_data_node() {
+		if(dataNode != null) {
+			dataNode.accept(new Message("DataNode","EXIT","",""));
+			dataNodeThread = null;
+			dataNode = null;
+		}
+	}
+	
+	
 	public void run() {
 		init();
 		
@@ -223,12 +269,7 @@ public class Server implements Runnable {
 		start_election_manager();
 		
 		Thread.currentThread();
-		while(!Thread.interrupted()) {
-			
-			/* Coordinator는 Up, Slave만 Down
-			 * NameNode는 이를 감안하고 DataNode에 
-			 * 작업 분배 및 종합할 수 있는 로직이 필요함. */
-			
+		while(!Thread.interrupted()) {			
 			try {
 				Socket socket = serverSocket.accept();
 				DataInputStream dis = new DataInputStream(socket.getInputStream());
@@ -241,13 +282,21 @@ public class Server implements Runnable {
 				Message msg = new Message(type, flag, addr, data);
 				
 				switch (msg.getType()) {
-					case "ELECTION":
+					case "ELECTIONMANAGER":
 						if(electionManager != null)
 							electionManager.accept(msg);
 						break;
-					case "HEARTBEAT" :
+					case "RESOURCEMANAGER" :
 						if(resourceManager != null)
 							resourceManager.accept(msg);
+						break;
+					case "NAMENODE" :
+						if(nameNode != null)
+							nameNode.accept(msg);
+						break;
+					case "DATANODE" :
+						if(dataNode != null)
+							dataNode.accept(msg);
 						break;
 				}
 				

@@ -11,12 +11,13 @@ public class DataNode extends PassiveQueue<Message> implements Runnable {
 	}
 	
 	public void run() {	
-		
 		while(!shouldStop) {
 			Message msg = super.release();
 			switch(msg.getFlag()) {
 				case "EXIT":
 					shouldStop = true;
+					break;
+				case "":
 					break;
 			}
 		}

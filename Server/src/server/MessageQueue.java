@@ -5,7 +5,11 @@ import java.net.*;
 
 public class MessageQueue extends PassiveQueue<Message> implements Runnable {
 	private final int SOCKET_TIMEOUT = 1000;
-	private final int port = 10001;
+	private int port = 10001;
+	
+	public MessageQueue(int port) {
+		this.port = port;
+	}
 	
 	public synchronized void acceptMessage(Message msg) {
 		super.accept(msg);
