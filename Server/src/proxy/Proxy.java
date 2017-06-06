@@ -14,12 +14,6 @@ public class Proxy implements Runnable {
 		try {
 			serverSocket = new ServerSocket(port);
 		} catch (IOException e) {
-			try {
-				serverSocket.close();
-				serverSocket = new ServerSocket(port);
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
 			
 		}
 	}

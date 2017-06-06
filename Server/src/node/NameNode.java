@@ -1,5 +1,6 @@
 package node;
 
+import java.io.IOException;
 import java.util.*;
 import proxy.*;
 import server.*;
@@ -23,6 +24,11 @@ public class NameNode extends PassiveQueue<Message> implements Runnable {
 	
 	private void stop_proxy() {
 		if(proxy != null) {
+			try {
+				proxy.serverSocket.close();
+			} catch (IOException e) {
+				
+			}
 			proxyThread.interrupt();
 			proxyThread = null;
 			proxy = null;
