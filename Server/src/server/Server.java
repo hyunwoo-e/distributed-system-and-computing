@@ -125,6 +125,7 @@ public class Server implements Runnable {
 		stop_node_manager();
 		start_node_manager();
 		/* Coordinator가 선정되면 DataNode를 실행 */
+		stop_data_node();
 		start_data_node();
 	}
 	
