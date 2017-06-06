@@ -38,6 +38,7 @@ public class Timer extends Thread implements Timable {
 				elapsed_time += TIMER_TICK;
 				if(elapsed_time >= expire_time) {
 					timeout(type);
+					Thread.currentThread().interrupt();
 				}
 
 			} catch (InterruptedException e) {

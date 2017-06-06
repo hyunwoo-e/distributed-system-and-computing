@@ -14,7 +14,6 @@ public class Server implements Runnable {
 	
 	private static String coordinator;
 	private static boolean isCoordinatorAlive;
-	private static boolean isElectionStarted;
 	
 	private static HashMap<String, Integer> aliveServerMap;
 	private static int aliveServerCount;
@@ -138,14 +137,9 @@ public class Server implements Runnable {
 	
 	public static synchronized void setIsCoordinatorAlive(boolean isAlive) {
 		isCoordinatorAlive = isAlive;
-
-		/* Coordinator가 Up 되었을 때 Election이 종료됨 */
-		if(isCoordinatorAlive == true) {
-			setIsElectionStarted(false);
-		}
-
+		
 		/* Coordinator가 Down 되었을 때 Election이 실행 */
-		if(isCoordinatorAlive == false && isElectionStarted == false)
+		if(isCoordinatorAlive == false)
 		{
 			electionManager.start_election();
 		}
@@ -155,23 +149,17 @@ public class Server implements Runnable {
 		return isCoordinatorAlive;
 	}
 	
-	public static void setIsElectionStarted(boolean isStarted) {
-		isElectionStarted = isStarted;
-	}
-	
-	public static boolean getIsElectionStarted() {
-		return isElectionStarted;
-	}
-	
 	public static HashMap<String, Integer> getAliveServerMap() {
 		return aliveServerMap;
 	}
 	
 	public static void setAliveServerMap(HashMap<String, Integer> temp) {
 		/* HeartBeat 현재 상태를 출력 */
+		/*
 		for(Map.Entry<String, Integer> entry : aliveServerMap.entrySet()) {
 			System.out.println("HEARTBEATING FROM " + entry.getKey() + " TTL " + (50000 - entry.getValue()) + "ms");
 		}
+		*/
 		
 		aliveServerMap = temp;
 		aliveServerCount = aliveServerMap.size();
@@ -187,7 +175,6 @@ public class Server implements Runnable {
 			electionManager = new ElectionManager();
 			electionManagerThread = new Thread(electionManager);
 			electionManagerThread.start();
-			isElectionStarted = true;
 		}
 	}
 	

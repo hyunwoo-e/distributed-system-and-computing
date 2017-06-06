@@ -21,7 +21,6 @@ public class Proxy implements Runnable {
 	public void run() {	
 		System.out.println("SERVERPROXY UP");
 		
-		/* Coordinator는 Up, Slave만 Down 이를 고려해서 DataNode에 작업 분배 및 종합할 수 있는 로직이 필요함. */
 		Thread.currentThread();
 		while(!Thread.interrupted()) {			
 			try {

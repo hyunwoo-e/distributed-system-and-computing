@@ -5,9 +5,80 @@ import server.*;
 public class ElectionManager extends PassiveQueue<Message> implements Runnable, Timable {
 	private Timer timer;
 	private boolean shouldStop;
+	private boolean isElectionStarted;
 
 	public ElectionManager() {
 		shouldStop = false;
+	}
+	
+	public void setIsElectionStarted(boolean isElectionStarted) {
+		this.isElectionStarted = isElectionStarted;
+	}
+	
+	public boolean getIsElectionStarted() {
+		return isElectionStarted;
+	}
+	
+	public void start_election() {		
+		Message msg = new Message("ELECTIONMANAGER", "START", "", "");
+		super.accept(msg);
+	}
+	
+	/* 자신의 index보다 작은 서버에 Coordinator 메시지를 전송 */
+	public void send_coordinator() {
+		for(int i = 0 ; i <= Server.getMyIndex(); i++) {
+			Message smsg = new Message("ELECTIONMANAGER", "COORDINATOR", Server.getTotalServerList().get(i), Server.getMyAddr());
+			Server.getMessageQueue().accept(smsg);
+		}
+	}
+	
+	/* Coordinator 메시지를 받으면  해당 서버를  Coordinator로 설정 */ 
+	public void respond_coordinator(Message rmsg) {
+		setIsElectionStarted(false);
+		Server.setCoordinator(rmsg.getData());
+		stopTimer();
+	}
+	
+	/* Ok 메시지를 받으면 Coordinator를 포기하고 Coordinator 메시지를 대기 */
+	public void respond_ok() {
+		startTimer("OK");
+	}
+	
+	/* Election 메시지를 받으면 Ok 메시지를 전송하고, 자신의 index보다 큰 서버에 Election 메시지를 전송 */
+	public void send_ok(Message rmsg) {		
+		Message smsg = new Message("ELECTIONMANAGER", "OK", rmsg.getAddr(), "");
+		Server.getMessageQueue().accept(smsg);
+	}
+	
+	/* 자신의 index보다 큰 서버에 Election 메시지를 전송 */
+	public void send_election() {
+		if(getIsElectionStarted() == false) {
+			setIsElectionStarted(true);
+			for(int i = Server.getMyIndex() + 1 ; i < Server.getTotalServerList().size(); i++) {
+				Message smsg = new Message("ELECTIONMANAGER", "ELECTION", Server.getTotalServerList().get(i), "");
+				Server.getMessageQueue().accept(smsg);
+			}
+			startTimer("ELECTION");
+		}
+	}
+	
+	public void startTimer(String type) {
+		stopTimer();
+		timer = new Timer(this, type);
+		timer.start();
+	}
+	
+	public void stopTimer() {
+		if(timer != null)
+		{
+			timer.interrupt();
+			try {
+				timer.join();
+			} catch (InterruptedException e) {
+				
+			}
+			timer = null;
+		}
 	}
 	
 	/* Election 메시지를 보내고 응답이 없으면 자신이 Coordinator가 됨
@@ -25,66 +96,6 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 				msg = new Message("ELECTIONMANAGER", "TIMEOUT", "", "OK");
 				super.accept(msg);
 				break;
-		}
-	}
-	
-	public void start_election() {
-		Server.setIsElectionStarted(true);		
-		Message msg = new Message("ELECTIONMANAGER", "START", "", "");
-		super.accept(msg);
-	}
-	
-	/* 자신의 index보다 작은 서버에 Coordinator 메시지를 전송 */
-	public void send_coordinator() {
-		for(int i = 0 ; i <= Server.getMyIndex(); i++) {
-			Message smsg = new Message("ELECTIONMANAGER", "COORDINATOR", Server.getTotalServerList().get(i), Server.getMyAddr());
-			Server.getMessageQueue().accept(smsg);
-		}
-	}
-	
-	/* Coordinator 메시지를 받으면  해당 서버를  Coordinator로 설정 */ 
-	public void respond_coordinator(Message rmsg) {
-		Server.setCoordinator(rmsg.getData());
-		stopTimer();
-	}
-	
-	/* Ok 메시지를 받으면 Coordinator를 포기하고 Coordinator 메시지를 대기 */
-	public void respond_ok() {
-		startTimer("OK");
-	}
-	
-	/* Election 메시지를 받으면 Ok 메시지를 전송하고, 자신의 index보다 큰 서버에 Election 메시지를 전송 */
-	public void send_ok(Message rmsg) {		
-		Message smsg = new Message("ELECTIONMANAGER", "OK", rmsg.getAddr(), "");
-		Server.getMessageQueue().accept(smsg);
-	}
-	
-	public void respond_election(Message rmsg){
-		Server.setIsElectionStarted(true);
-		send_ok(rmsg);
-	}
-	
-	/* 자신의 index보다 큰 서버에 Election 메시지를 전송 */
-	public void send_election() {
-		for(int i = Server.getMyIndex() + 1 ; i < Server.getTotalServerList().size(); i++) {
-			Message smsg = new Message("ELECTIONMANAGER", "ELECTION", Server.getTotalServerList().get(i), "");
-			Server.getMessageQueue().accept(smsg);
-		}
-		
-		startTimer("ELECTION");
-	}
-	
-	public void startTimer(String type) {
-		stopTimer();
-		timer = new Timer(this, type);
-		timer.start();
-	}
-	
-	public void stopTimer() {
-		if(timer != null)
-		{
-			timer.interrupt();
-			timer = null;
 		}
 	}
 	

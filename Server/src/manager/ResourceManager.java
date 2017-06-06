@@ -12,7 +12,7 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 	}
 	
 	public void timeout(String type) {
-		Message msg = new Message("ELECTION", "TIMEOUT", "", "OK");
+		Message msg = new Message("ELECTION", "TIMEOUT", "", "");
 		super.accept(msg);
 	}
 	
@@ -44,6 +44,11 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 		if(timer != null)
 		{
 			timer.interrupt();
+			try {
+				timer.join();
+			} catch (InterruptedException e) {
+				
+			}
 			timer = null;
 		}
 	}

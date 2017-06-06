@@ -40,7 +40,7 @@ public class MessageQueue extends PassiveQueue<Message> implements Runnable {
 					/* 클라이언트 프록시는 서버 프록시에 다시 서비스를 요청 */
 					
 					/* Coordinator를 선정하기 위해 일렉션을 실행 */
-					if(Server.getIsCoordinatorAlive() == true && Server.getIsElectionStarted() == false) {
+					if(Server.getIsCoordinatorAlive() == true) {
 						Server.setIsCoordinatorAlive(false);
 					}
 				}
