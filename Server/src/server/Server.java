@@ -122,6 +122,7 @@ public class Server implements Runnable {
 			stop_name_node();
 		}
 		/* Coordinator가 선정되면 NodeManager를 실행 */
+		stop_node_manager();
 		start_node_manager();
 		/* Coordinator가 선정되면 DataNode를 실행 */
 		start_data_node();
@@ -265,7 +266,8 @@ public class Server implements Runnable {
 			System.out.println("로컬 서버를 목록에서 찾을 수 없음");
 			return;
 		}
-		
+		System.out.println("SERVER UP");
+				
 		start_election_manager();
 		
 		Thread.currentThread();
@@ -324,7 +326,7 @@ public class Server implements Runnable {
 		t.start();	
 		try {
 			t.join();
-			System.out.println("SERVER IS DOWN");
+			System.out.println("SERVER DOWN");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

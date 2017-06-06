@@ -49,6 +49,8 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 	}
 
 	public void run() {	
+		System.out.println("RESOURCEMANAGER UP");
+		
 		startTimer("HEARTBEAT");
 		
 		while(!shouldStop) {
@@ -69,6 +71,6 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 		}
 		
 		stopTimer();
-		System.out.println("RESOURCE MANAGER IS DOWN");
+		System.out.println("RESOURCE MANAGER DOWN");
 	}	
 }

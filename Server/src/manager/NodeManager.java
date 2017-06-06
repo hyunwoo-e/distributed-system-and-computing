@@ -14,6 +14,8 @@ public class NodeManager implements Runnable, Timable {
 	}
 	
 	public void run() {
+		System.out.println("NODEMANAGER UP");
+		
 		Thread.currentThread();
 		while(!Thread.interrupted()) {
 			try {

@@ -57,7 +57,6 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	public void send_ok(Message rmsg) {		
 		Message smsg = new Message("ELECTIONMANAGER", "OK", rmsg.getAddr(), "");
 		Server.mQ.accept(smsg);
-		send_election();
 	}
 	
 	public void respond_election(Message rmsg){
@@ -90,7 +89,8 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	}
 	
 	public void run() {
-		
+		System.out.println("ELECTIONMANAGER UP");
+
 		/* 진입 시 Election을 요청 */
 		start_election();
 		
@@ -104,6 +104,7 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 					System.out.println("RECEIVE ELECTION FROM " + msg.getAddr());
 					send_ok(msg);
 					System.out.println("SEND OK");
+					send_election();
 					break;
 				case "OK" :
 					System.out.println("RECEIVE OK FROM " + msg.getAddr());
