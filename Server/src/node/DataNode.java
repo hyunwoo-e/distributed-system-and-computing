@@ -1,20 +1,21 @@
 package node;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
 import java.util.*;
 import server.*;
-import service.*;
 
 public class DataNode implements Runnable {
-	private final int port = 10003;	
+	private final int sock_timeout = 2000;
+	
+	private final int name_port = 10002;
+	private final int data_port = 10003;	
+	
 	public ServerSocket serverSocket;
 	
 	public DataNode() {
 		try {
-			serverSocket = new ServerSocket(port);
+			serverSocket = new ServerSocket(data_port);
 		} catch (IOException e) {
 			
 		}
@@ -29,16 +30,32 @@ public class DataNode implements Runnable {
 				Socket socket = serverSocket.accept();
 				DataInputStream dis = new DataInputStream(socket.getInputStream());
 
-				String type = dis.readUTF();
-				String flag = dis.readUTF();
-				String addr = dis.readUTF(); addr = socket.getInetAddress().toString().replaceAll("/", "");
-				String data = dis.readUTF();
-				
-				Message msg = new Message(type, flag, addr, data);
-				
-				switch (msg.getType()) {
+				String addr = dis.readUTF();
+				int cur = dis.readInt();
+				String text = dis.readUTF();
+				String pattern = dis.readUTF();
 
+				KMP kmp = new KMP(text, pattern);
+				kmp.make_pi();
+				
+				ArrayList<Integer> indexList;
+				indexList = kmp.find_index();
+				
+				Socket sock = new Socket();
+				sock.connect(new InetSocketAddress(Server.getCoordinator(), name_port), sock_timeout);
+				
+				DataOutputStream dos = new DataOutputStream(sock.getOutputStream());
+				dos.writeUTF("MERGE");
+				dos.writeUTF(addr);
+				dos.writeInt(cur);
+								
+				for(Integer i : indexList) {
+					dos.writeInt(i);
 				}
+				dos.writeInt(-1);
+				
+				dos.close();
+				sock.close();
 				
 				dis.close();
 				socket.close();

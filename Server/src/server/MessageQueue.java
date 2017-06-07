@@ -4,11 +4,11 @@ import java.io.*;
 import java.net.*;
 
 public class MessageQueue extends PassiveQueue<Message> implements Runnable {
-	private final int SOCKET_TIMEOUT = 1000;
-	private int port = 10001;
+	private final int port = 10001;
+	private final int sock_timeout = 1000;
 	
-	public MessageQueue(int port) {
-		this.port = port;
+	public MessageQueue() {
+		
 	}
 	
 	public synchronized void acceptMessage(Message msg) {
@@ -24,7 +24,7 @@ public class MessageQueue extends PassiveQueue<Message> implements Runnable {
 			msg = super.release();
 			try {
 				socket = new Socket();
-				socket.connect(new InetSocketAddress(msg.getAddr(), port), SOCKET_TIMEOUT);
+				socket.connect(new InetSocketAddress(msg.getAddr(), port), sock_timeout);
 				
 				dos = new DataOutputStream(socket.getOutputStream());
 				dos.writeUTF(msg.getType());

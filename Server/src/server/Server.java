@@ -42,7 +42,7 @@ public class Server implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		messageQueue = new MessageQueue(port);
+		messageQueue = new MessageQueue();
 		messageQueueThread = new Thread(messageQueue);
 		messageQueueThread.start();
 	}
@@ -165,6 +165,7 @@ public class Server implements Runnable {
 	
 	public static void setAliveServerMap(String ip) {
 		aliveServerMap.put(ip, 0);
+		System.out.println("HEARTBEAT FROM :" + ip + " / THE NUMBER OF SERVER :" + aliveServerMap.size());
 	}
 	
 	private static void start_election_manager() {
