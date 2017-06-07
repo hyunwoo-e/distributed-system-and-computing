@@ -26,9 +26,11 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	
 	/* 자신의 index보다 작은 서버에 Coordinator 메시지를 전송 */
 	public void send_coordinator() {
-		for(int i = 0 ; i <= Server.getMyIndex(); i++) {
-			Message smsg = new Message("ELECTIONMANAGER", "COORDINATOR", Server.getTotalServerList().get(i), Server.getMyAddr());
-			Server.getMessageQueue().accept(smsg);
+		if(getIsElectionStarted() == true) {
+			for(int i = 0 ; i <= Server.getMyIndex(); i++) {
+				Message smsg = new Message("ELECTIONMANAGER", "COORDINATOR", Server.getTotalServerList().get(i), Server.getMyAddr());
+				Server.getMessageQueue().accept(smsg);
+			}
 		}
 	}
 	
