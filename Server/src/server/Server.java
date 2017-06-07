@@ -16,7 +16,6 @@ public class Server implements Runnable {
 	private static boolean isCoordinatorAlive;
 	
 	private static HashMap<String, Integer> aliveServerMap;
-	private static int aliveServerCount;
 	
 	private static ElectionManager electionManager;
 	private static NodeManager nodeManager;
@@ -162,12 +161,10 @@ public class Server implements Runnable {
 		*/
 		
 		aliveServerMap = temp;
-		aliveServerCount = aliveServerMap.size();
 	}
 	
 	public static void setAliveServerMap(String ip) {
 		aliveServerMap.put(ip, 0);
-		aliveServerCount = aliveServerMap.size();
 	}
 	
 	private static void start_election_manager() {
@@ -194,7 +191,6 @@ public class Server implements Runnable {
 	private static void start_resource_manager() {
 		if(resourceManager == null) {
 			aliveServerMap.clear();
-			aliveServerCount = 0;
 			
 			resourceManager = new ResourceManager();
 			resourceManagerThread = new Thread(resourceManager);

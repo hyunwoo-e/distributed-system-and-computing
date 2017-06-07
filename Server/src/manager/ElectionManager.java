@@ -131,6 +131,7 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 						send_coordinator();
 					}
 					else {
+						setIsElectionStarted(false);
 						start_election();
 					}
 					break;
