@@ -10,24 +10,41 @@ public class Service {
 	private final int data_port = 10003;
 	private final int sock_timeout = 2000;
 
-	private KMP kmp;
-	private HashMap<Integer, KMP> kmpMap;
 	private String addr;
+	private KMP kmp;
+	public HashMap<Integer, KMP> kmpMap;
 	
-	public int taskCount;
 	public HashSet<Integer> result;
-	public HashSet<Integer> done;
+	public HashMap<Integer, Boolean> done;
 	
 	public Service(String addr, KMP kmp) {
 		this.addr = addr;
 		this.kmp = kmp; 
 		kmpMap = new HashMap<Integer, KMP>();
-		taskCount = Server.getAliveServerMap().size();
 		result = new HashSet<Integer>();
-		done = new HashSet<Integer>();
+		done = new HashMap<Integer, Boolean>();
 	}
 	
-	public void devide() {
+	public void allocate(int cur, String dataNode) {
+		try {
+			Socket socket = new Socket();
+			socket.connect(new InetSocketAddress(dataNode, data_port), sock_timeout);
+			DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+			
+			dos.writeUTF(addr);
+			dos.writeInt(cur);
+			dos.writeUTF(kmpMap.get(cur).text);
+			dos.writeUTF(kmpMap.get(cur).pattern);
+			
+			dos.close();
+			socket.close();
+		} catch (IOException e) {
+			
+		}
+	}
+	
+	
+	public void devide(int taskCount) {
 		int i = 0;
 		int cur = 0;
 		int len = kmp.text.length() / taskCount;
@@ -43,21 +60,9 @@ public class Service {
 			else
 				kmpMap.put(cur, new KMP(kmp.text.substring(cur), kmp.pattern));
 			
-			try {
-				Socket socket = new Socket();
-				socket.connect(new InetSocketAddress(entry.getKey(), data_port), sock_timeout);
-				DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-				
-				dos.writeUTF(addr);
-				dos.writeInt(cur);
-				dos.writeUTF(kmpMap.get(cur).text);
-				dos.writeUTF(kmpMap.get(cur).pattern);
-				
-				dos.close();
-				socket.close();
-			} catch (IOException e) {
-				/* Coordinator는 Up, Slave만 Down 이를 고려해서 DataNode에 작업 분배 및 종합할 수 있는 로직이 필요함. */
-			}
+			done.put(cur, false);
+			
+			allocate(cur, entry.getKey());
 
 			cur = cur+len+j;
 			i++;
