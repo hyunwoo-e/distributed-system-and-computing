@@ -1,12 +1,19 @@
 package manager;
 
-public class Timer extends Thread implements Timable {
+public class Timer extends Thread {
 
 	private String type;
 	private Object manager;
 	
 	private float elapsed_time;
 	private float expire_time;
+	
+	private final int TIMER_TICK = 500;
+	private final int HEARTBEAT_TICK = 5000;
+	
+	private final int ELECTION_TIMEOUT = 5000;
+	private final int OK_TIMEOUT = 10000;
+	private final int HEARTBEAT_TIMEOUT = 50000;
 	
 	public Timer(Object manager, String type) {
 		this.manager = manager;
@@ -37,7 +44,7 @@ public class Timer extends Thread implements Timable {
 
 				elapsed_time += TIMER_TICK;
 				if(elapsed_time >= expire_time) {
-					timeout(type);
+					((Timable)manager).timeout(type);
 					Thread.currentThread().interrupt();
 				}
 
@@ -45,17 +52,5 @@ public class Timer extends Thread implements Timable {
 				Thread.currentThread().interrupt();
 			}
 		}
-	}
-
-	public void timeout(String type) {
-		((Timable)manager).timeout(type);
-	}
-	
-	public void startTimer(String type) {
-
-	}
-	
-	public void stopTimer() {
-
 	}
 }

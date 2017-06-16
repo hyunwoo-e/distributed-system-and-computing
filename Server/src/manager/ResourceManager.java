@@ -4,16 +4,14 @@ import java.util.*;
 import server.*;
 
 public class ResourceManager extends PassiveQueue<Message> implements Runnable, Timable {
+	private final int HEARTBEAT_TICK = 5000;
+	private final int HEARTBEAT_TIMEOUT = 50000;
+	
 	private Timer timer;
 	private boolean shouldStop;
 	
 	public ResourceManager() {
 		
-	}
-	
-	public void timeout(String type) {
-		Message msg = new Message("ELECTION", "TIMEOUT", "", "");
-		super.accept(msg);
 	}
 	
 	public synchronized void update_nodes() {
@@ -28,6 +26,11 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 			}
 		}
 		Server.setAliveServerMap(temp);
+	}
+	
+	public void timeout(String type) {
+		Message msg = new Message("RESOURCEMANAGER", "TIMEOUT", "", "");
+		super.accept(msg);
 	}
 	
 	public synchronized void update_nodes(String ip) {

@@ -22,29 +22,20 @@ public class Server implements Runnable {
 	private static ResourceManager resourceManager;
 	private static NameNode nameNode;
 	private static DataNode dataNode;
-	private static Proxy proxy;
-	private static MessageQueue messageQueue;
+	private static ReceiveQueue receiveQueue;
+	//private static Proxy proxy;
 	
 	private static Thread electionManagerThread;
 	private static Thread nodeManagerThread;
 	private static Thread resourceManagerThread;
 	private static Thread nameNodeThread;
 	private static Thread dataNodeThread;
-	private static Thread messageQueueThread;
-	private static Thread proxyThread;
+	private static Thread receiveQueueThread;
+	//private static Thread proxyThread;
 	
-	private final int port = 10001;	
-	private ServerSocket serverSocket;
 		
 	public Server() {
-		try {
-			serverSocket = new ServerSocket(port);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		messageQueue = new MessageQueue();
-		messageQueueThread = new Thread(messageQueue);
-		messageQueueThread.start();
+
 	}
 	
 	/* 서버 초기화 */
@@ -89,10 +80,6 @@ public class Server implements Runnable {
 			}
 		}
 	}	
-
-	public static MessageQueue getMessageQueue() {
-		return messageQueue;
-	}
 	
 	public static ArrayList<String> getTotalServerList() {
 		return totalServerList;
@@ -104,6 +91,18 @@ public class Server implements Runnable {
 	
 	public static int getMyIndex() {
 		return myIndex;
+	}
+	
+	public static PassiveQueue<Message> getManager(String type) {
+		switch (type) {
+		case "ELECTIONMANAGER":
+			return electionManager;
+		case "RESOURCEMANAGER" :
+			return resourceManager;
+		case "NODEMANAGER" :
+			return nodeManager;	
+		}
+		return null;
 	}
 	
 	public static synchronized String getCoordinator() {
@@ -153,13 +152,6 @@ public class Server implements Runnable {
 	}
 	
 	public static void setAliveServerMap(HashMap<String, Integer> temp) {
-		/* HeartBeat 현재 상태를 출력 */
-		/*
-		for(Map.Entry<String, Integer> entry : aliveServerMap.entrySet()) {
-			System.out.println("HEARTBEATING FROM " + entry.getKey() + " TTL " + (50000 - entry.getValue()) + "ms");
-		}
-		*/
-		
 		aliveServerMap = temp;
 	}
 	
@@ -222,7 +214,7 @@ public class Server implements Runnable {
 	
 	private static void stop_node_manager() {
 		if(nodeManager != null) {
-			nodeManagerThread.interrupt();
+			nodeManager.accept(new Message("NODEMANAGER","EXIT","",""));
 			try {
 				nodeManagerThread.join();
 			} catch (InterruptedException e) {
@@ -289,6 +281,35 @@ public class Server implements Runnable {
 		}
 	}
 	
+	private static void start_receive_queue() {
+		if(receiveQueue == null) {
+			receiveQueue = new ReceiveQueue();		
+			receiveQueueThread = new Thread(receiveQueue);
+			receiveQueueThread.start();
+		}
+	}
+	
+	private static void stop_receive_queue() {
+		if(receiveQueue != null) {
+			try {
+				if(receiveQueue.serverSocket != null) {
+					receiveQueueThread.interrupt();
+					receiveQueue.serverSocket.close();
+					try {
+						receiveQueueThread.join();
+					} catch (InterruptedException e) {
+						
+					}
+				}
+			} catch (IOException e) {
+				
+			}
+			receiveQueueThread = null;
+			receiveQueue = null;
+		}
+	}
+
+	/*
 	private static void start_proxy() {
 		if(proxy == null) {
 			proxy = new Proxy();
@@ -314,7 +335,7 @@ public class Server implements Runnable {
 			proxy = null;
 		}
 	}
-	
+	*/
 	
 	public void run() {
 		init();
@@ -324,49 +345,17 @@ public class Server implements Runnable {
 			return;
 		}
 		System.out.println("SERVER UP");
-				
+
+		start_receive_queue();
 		start_election_manager();
-		
+
 		Thread.currentThread();
-		while(!Thread.interrupted()) {			
-			try {
-				Socket socket = serverSocket.accept();
-				DataInputStream dis = new DataInputStream(socket.getInputStream());
-
-				String type = dis.readUTF();
-				String flag = dis.readUTF();
-				String addr = dis.readUTF(); addr = socket.getInetAddress().toString().replaceAll("/", "");
-				String data = dis.readUTF();
-				
-				Message msg = new Message(type, flag, addr, data);
-				
-				switch (msg.getType()) {
-					case "ELECTIONMANAGER":
-						if(electionManager != null)
-							electionManager.accept(msg);
-						break;
-					case "RESOURCEMANAGER" :
-						if(resourceManager != null)
-							resourceManager.accept(msg);
-						break;
-				}
-				
-				dis.close();
-				socket.close();
-			} catch (IOException e) {
-				
-			}
-		}
-
+		while(!Thread.interrupted());
+	
+		stop_receive_queue();
 		stop_node_manager();
 		stop_resource_manager();
 		stop_election_manager();
-		
-		try {
-			serverSocket.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 	
 	public static void main (String[] args) {

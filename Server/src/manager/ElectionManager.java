@@ -6,9 +6,14 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	private Timer timer;
 	private boolean shouldStop;
 	private boolean isElectionStarted;
-
+	private SendQueue sendQueue;
+	private Thread sendQueueThread;
+	
 	public ElectionManager() {
 		shouldStop = false;
+		sendQueue = new SendQueue();
+		sendQueueThread = new Thread(sendQueue);
+		sendQueueThread.start();
 	}
 	
 	public void setIsElectionStarted(boolean isElectionStarted) {
@@ -29,7 +34,8 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 		if(getIsElectionStarted() == true) {
 			for(int i = 0 ; i <= Server.getMyIndex(); i++) {
 				Message smsg = new Message("ELECTIONMANAGER", "COORDINATOR", Server.getTotalServerList().get(i), Server.getMyAddr());
-				Server.getMessageQueue().accept(smsg);
+				sendQueue.accept(smsg);
+				//Server.getMessageQueue().accept(smsg);
 			}
 		}
 	}
@@ -49,7 +55,8 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	/* Election 메시지를 받으면 Ok 메시지를 전송하고, 자신의 index보다 큰 서버에 Election 메시지를 전송 */
 	public void send_ok(Message rmsg) {		
 		Message smsg = new Message("ELECTIONMANAGER", "OK", rmsg.getAddr(), "");
-		Server.getMessageQueue().accept(smsg);
+		sendQueue.accept(smsg);
+		//Server.getMessageQueue().accept(smsg);
 	}
 	
 	/* 자신의 index보다 큰 서버에 Election 메시지를 전송 */
@@ -58,7 +65,8 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 			setIsElectionStarted(true);
 			for(int i = Server.getMyIndex() + 1 ; i < Server.getTotalServerList().size(); i++) {
 				Message smsg = new Message("ELECTIONMANAGER", "ELECTION", Server.getTotalServerList().get(i), "");
-				Server.getMessageQueue().accept(smsg);
+				sendQueue.accept(smsg);
+				//Server.getMessageQueue().accept(smsg);
 			}
 			startTimer("ELECTION");
 		}
@@ -145,6 +153,10 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 		}
 		
 		stopTimer();
+		
+		sendQueue.stop();
+		sendQueue.notify();
+		
 		System.out.println("ELECTION MANAGER DOWN");
 	}
 }

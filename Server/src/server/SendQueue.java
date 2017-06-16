@@ -3,16 +3,17 @@ package server;
 import java.io.*;
 import java.net.*;
 
-public class MessageQueue extends PassiveQueue<Message> implements Runnable {
+public class SendQueue extends PassiveQueue<Message> implements Runnable {
 	private final int port = 10001;
 	private final int sock_timeout = 1000;
+	private boolean shouldStop;
 	
-	public MessageQueue() {
-		
+	public SendQueue() {
+		shouldStop = false;
 	}
 	
-	public synchronized void acceptMessage(Message msg) {
-		super.accept(msg);
+	public void stop() {
+		shouldStop = true;
 	}
 	
 	public void run() {
@@ -20,7 +21,7 @@ public class MessageQueue extends PassiveQueue<Message> implements Runnable {
 		DataOutputStream dos;
 		Message msg;
 		
-		for(;;){
+		while(!shouldStop) {
 			msg = super.release();
 			try {
 				socket = new Socket();

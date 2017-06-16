@@ -30,6 +30,7 @@ public class DataNode implements Runnable {
 				Socket socket = serverSocket.accept();
 				DataInputStream dis = new DataInputStream(socket.getInputStream());
 
+				int id = dis.readInt();
 				String addr = dis.readUTF();
 				int cur = dis.readInt();
 				String text = dis.readUTF();
@@ -46,6 +47,7 @@ public class DataNode implements Runnable {
 				
 				DataOutputStream dos = new DataOutputStream(sock.getOutputStream());
 				dos.writeUTF("MERGE");
+				dos.writeInt(id);
 				dos.writeUTF(addr);
 				dos.writeInt(cur);
 								

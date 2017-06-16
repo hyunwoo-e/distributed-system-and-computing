@@ -10,14 +10,16 @@ public class Service {
 	private final int data_port = 10003;
 	private final int sock_timeout = 2000;
 
-	private String addr;
+	private int id;
+	public String addr;
 	private KMP kmp;
 	public HashMap<Integer, KMP> kmpMap;
 	
 	public HashSet<Integer> result;
 	public HashMap<Integer, Boolean> done;
 	
-	public Service(String addr, KMP kmp) {
+	public Service(int id, String addr, KMP kmp) {
+		this.id = id;
 		this.addr = addr;
 		this.kmp = kmp; 
 		kmpMap = new HashMap<Integer, KMP>();
@@ -31,6 +33,7 @@ public class Service {
 			socket.connect(new InetSocketAddress(dataNode, data_port), sock_timeout);
 			DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 			
+			dos.writeInt(id);
 			dos.writeUTF(addr);
 			dos.writeInt(cur);
 			dos.writeUTF(kmpMap.get(cur).text);
