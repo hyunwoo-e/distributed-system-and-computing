@@ -7,7 +7,7 @@ import java.util.*;
 import server.Server;
 
 public class Service {
-	private final int data_port = 10003;
+	private final int data_port = 10005;
 	private final int sock_timeout = 2000;
 
 	private int id;

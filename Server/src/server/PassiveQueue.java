@@ -2,6 +2,7 @@ package server;
 
 public class PassiveQueue<E> {
 	GenericQueue<E> queue = new GenericQueue<E>();
+	private boolean shouldStop = false;
 
 	public synchronized void accept(E m) {
 		queue.enqueue(m);
@@ -9,7 +10,7 @@ public class PassiveQueue<E> {
 	}
 
 	public synchronized E release() {
-		for (;;) {
+		while(!shouldStop) {
 			if (queue.isEmpty()) {
 				try {
 					wait();
@@ -20,5 +21,11 @@ public class PassiveQueue<E> {
 				return queue.dequeue();
 			}
 		}
+		return null;
+	}
+	
+	public synchronized void destroy() {
+		shouldStop = true;
+		notify();
 	}
 }

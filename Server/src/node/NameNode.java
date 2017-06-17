@@ -7,7 +7,7 @@ import server.*;
 
 public class NameNode<E> implements Runnable {
 
-	private final int port = 10002;
+	private final int port = 10004;
 	private final int sock_timeout = 2000;
 	private int id;
 	

@@ -4,20 +4,35 @@ import java.io.*;
 import java.net.*;
 
 public class ReceiveQueue implements Runnable {
-	public final int port = 10001;	
+	
+	private PassiveQueue<Message> controller;
+	private boolean shouldStop;
+	
+	private int port;	
 	public ServerSocket serverSocket;
 	
-	public ReceiveQueue() {
+	public ReceiveQueue(PassiveQueue<Message> controller, int port) {
+		this.controller = controller;
+		this.port = port;
+		shouldStop = false;
 		try {
 			serverSocket = new ServerSocket(port);
 		} catch (IOException e) {
-			e.printStackTrace();
+			
 		}
 	}
 	
+	public void stop() {
+		try {
+			shouldStop = true;
+			serverSocket.close();
+		} catch (IOException e) {
+
+		}		
+	}
+	
 	public void run() {
-		Thread.currentThread();
-		while(!Thread.interrupted()) {			
+		while(!shouldStop) {			
 			try {
 				Socket socket = serverSocket.accept();
 				DataInputStream dis = new DataInputStream(socket.getInputStream());
@@ -29,8 +44,7 @@ public class ReceiveQueue implements Runnable {
 				
 				Message msg = new Message(type, flag, addr, data);
 				
-				PassiveQueue<Message> manager = Server.getManager(msg.getType());
-				manager.accept(msg);
+				controller.accept(msg);
 				
 				dis.close();
 				socket.close();
@@ -42,7 +56,7 @@ public class ReceiveQueue implements Runnable {
 		try {
 			serverSocket.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			
 		}
 	}
 }

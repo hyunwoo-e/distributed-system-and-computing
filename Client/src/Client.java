@@ -14,7 +14,7 @@ public class Client extends Thread{
 		String pattern = "abcabaababc";
 		
 		try {
-			Socket socket = new Socket("192.168.204.103", 10002);
+			Socket socket = new Socket("192.168.204.103", 10004);
 			DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 			
 			dos.writeUTF("REQUEST");
@@ -35,7 +35,7 @@ public class Client extends Thread{
 		client.start();
 		
 		try {
-			ServerSocket serverSocket = new ServerSocket(10002);
+			ServerSocket serverSocket = new ServerSocket(10004);
 			Socket socket = serverSocket.accept();
 			DataInputStream dis = new DataInputStream(socket.getInputStream());
 			System.out.print("Index: ");

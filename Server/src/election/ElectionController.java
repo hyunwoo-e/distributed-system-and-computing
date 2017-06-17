@@ -1,19 +1,18 @@
-package manager;
+package election;
 
 import server.*;
+import timer.*;
 
-public class ElectionManager extends PassiveQueue<Message> implements Runnable, Timable {
-	private Timer timer;
+public class ElectionController  extends PassiveQueue<Message> implements Runnable, Timable {
 	private boolean shouldStop;
-	private boolean isElectionStarted;
+	private Timer timer;
 	private SendQueue sendQueue;
-	private Thread sendQueueThread;
 	
-	public ElectionManager() {
+	private boolean isElectionStarted;
+	
+	public ElectionController(SendQueue sendQueue) {
+		this.sendQueue = sendQueue;
 		shouldStop = false;
-		sendQueue = new SendQueue();
-		sendQueueThread = new Thread(sendQueue);
-		sendQueueThread.start();
 	}
 	
 	public void setIsElectionStarted(boolean isElectionStarted) {
@@ -32,8 +31,8 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	/* 자신의 index보다 작은 서버에 Coordinator 메시지를 전송 */
 	public void send_coordinator() {
 		if(getIsElectionStarted() == true) {
-			for(int i = 0 ; i <= Server.getMyIndex(); i++) {
-				Message smsg = new Message("ELECTIONMANAGER", "COORDINATOR", Server.getTotalServerList().get(i), Server.getMyAddr());
+			for(int i = 0 ; i <= Server.myIndex; i++) {
+				Message smsg = new Message("ELECTIONMANAGER", "COORDINATOR", Server.totalServerList.get(i), Server.myAddr);
 				sendQueue.accept(smsg);
 				//Server.getMessageQueue().accept(smsg);
 			}
@@ -63,8 +62,8 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 	public void send_election() {
 		if(getIsElectionStarted() == false) {
 			setIsElectionStarted(true);
-			for(int i = Server.getMyIndex() + 1 ; i < Server.getTotalServerList().size(); i++) {
-				Message smsg = new Message("ELECTIONMANAGER", "ELECTION", Server.getTotalServerList().get(i), "");
+			for(int i = Server.myIndex + 1 ; i < Server.totalServerList.size(); i++) {
+				Message smsg = new Message("ELECTIONMANAGER", "ELECTION", Server.totalServerList.get(i), "");
 				sendQueue.accept(smsg);
 				//Server.getMessageQueue().accept(smsg);
 			}
@@ -89,6 +88,12 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 			}
 			timer = null;
 		}
+	}
+	
+	public void stop() {
+		stopTimer();
+		shouldStop = true;
+		destroy();
 	}
 	
 	/* Election 메시지를 보내고 응답이 없으면 자신이 Coordinator가 됨
@@ -117,45 +122,39 @@ public class ElectionManager extends PassiveQueue<Message> implements Runnable, 
 		
 		while(!shouldStop) {
 			Message msg = super.release();
-			switch(msg.getFlag()) {
-				case "START":
-					send_election();
-					break;
-				case "ELECTION" :
-					System.out.println("RECEIVE ELECTION FROM " + msg.getAddr());
-					send_ok(msg);
-					System.out.println("SEND OK");
-					send_election();
-					break;
-				case "OK" :
-					System.out.println("RECEIVE OK FROM " + msg.getAddr());
-					respond_ok();
-					break;
-				case "COORDINATOR" :
-					System.out.println("RECEIVE COORDINATOR FROM " + msg.getAddr());
-					respond_coordinator(msg);
-					System.out.println("COORDINATOR : " + msg.getAddr());
-					break;
-				case "TIMEOUT":
-					if(msg.getData().equals("ELECTION")) {
-						send_coordinator();
-					}
-					else {
-						setIsElectionStarted(false);
-						start_election();
-					}
-					break;
-				case "EXIT":
-					stopTimer();
-					shouldStop = true;
-					break;
+			if(msg != null) {
+				switch(msg.getFlag()) {
+					case "START":
+						send_election();
+						break;
+					case "ELECTION" :
+						System.out.println("RECEIVE ELECTION FROM " + msg.getAddr());
+						send_ok(msg);
+						System.out.println("SEND OK");
+						send_election();
+						break;
+					case "OK" :
+						System.out.println("RECEIVE OK FROM " + msg.getAddr());
+						respond_ok();
+						break;
+					case "COORDINATOR" :
+						System.out.println("RECEIVE COORDINATOR FROM " + msg.getAddr());
+						respond_coordinator(msg);
+						System.out.println("COORDINATOR : " + msg.getAddr());
+						break;
+					case "TIMEOUT":
+						if(msg.getData().equals("ELECTION")) {
+							send_coordinator();
+						}
+						else {
+							setIsElectionStarted(false);
+							start_election();
+						}
+						break;
+				}
 			}
+			
 		}
-		
-		stopTimer();
-		
-		sendQueue.stop();
-		sendQueue.notify();
 		
 		System.out.println("ELECTION MANAGER DOWN");
 	}

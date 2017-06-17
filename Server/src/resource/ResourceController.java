@@ -1,16 +1,15 @@
-package manager;
+package resource;
 
 import java.util.*;
 import server.*;
+import timer.Timable;
+import timer.Timer;
 
-public class ResourceManager extends PassiveQueue<Message> implements Runnable, Timable {
-	private final int HEARTBEAT_TICK = 5000;
-	private final int HEARTBEAT_TIMEOUT = 50000;
-	
+public class ResourceController extends PassiveQueue<Message> implements Runnable, Timable {
 	private Timer timer;
 	private boolean shouldStop;
 	
-	public ResourceManager() {
+	public ResourceController() {
 		
 	}
 	
@@ -18,13 +17,14 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 		/* ConcurrentModification 해결을 위해 복사 */
 		HashMap<String, Integer> temp = (HashMap<String, Integer>)Server.getAliveServerMap().clone();
 		
-		for(Map.Entry<String, Integer> entry : temp.entrySet()) {
-			entry.setValue(entry.getValue() + HEARTBEAT_TICK);
-			if(entry.getValue() > HEARTBEAT_TIMEOUT) {
+		for(Map.Entry<String, Integer> entry : Server.getAliveServerMap().entrySet()) {
+			temp.put(entry.getKey(),entry.getValue() + HEARTBEAT_TICK);
+			if(temp.get(entry.getKey()) > HEARTBEAT_TIMEOUT) {
 				temp.remove(entry.getKey());
 				System.out.println(entry.getKey() + " Down");
 			}
 		}
+		
 		Server.setAliveServerMap(temp);
 	}
 	
@@ -55,7 +55,13 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 			timer = null;
 		}
 	}
-
+	
+	public void stop() {
+		stopTimer();
+		shouldStop = true;
+		destroy();
+	}
+	
 	public void run() {	
 		System.out.println("RESOURCEMANAGER UP");
 		
@@ -63,7 +69,8 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 		
 		while(!shouldStop) {
 			Message msg = super.release();
-			switch(msg.getFlag()) {
+			if(msg != null) {
+				switch(msg.getFlag()) {
 				case "HEARTBEAT":
 					update_nodes(msg.getAddr());
 					break;
@@ -71,10 +78,7 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 					update_nodes();
 					startTimer("HEARTBEAT");
 					break;
-				case "EXIT":
-					stopTimer();
-					shouldStop = true;
-					break;
+				}
 			}
 		}
 		

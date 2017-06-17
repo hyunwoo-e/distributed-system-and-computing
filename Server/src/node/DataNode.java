@@ -8,8 +8,8 @@ import server.*;
 public class DataNode implements Runnable {
 	private final int sock_timeout = 2000;
 	
-	private final int name_port = 10002;
-	private final int data_port = 10003;	
+	private final int name_port = 10004;
+	private final int data_port = 10005;	
 	
 	public ServerSocket serverSocket;
 	
