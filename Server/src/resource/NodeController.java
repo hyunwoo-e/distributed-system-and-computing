@@ -15,7 +15,6 @@ public class NodeController {
 	private Thread sendQueueThread;
 	
 	private boolean shouldStop;
-	private Timer timer;
 
 	public NodeController() {
 		sendQueue = new SendQueue(port);
