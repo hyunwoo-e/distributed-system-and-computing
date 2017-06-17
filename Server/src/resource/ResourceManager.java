@@ -1,48 +1,88 @@
 package resource;
 
 import java.util.*;
-
-import election.ElectionController;
 import server.*;
 import timer.Timable;
 import timer.Timer;
 
-public class ResourceManager {
-
-	private final int port = 10002;
-
-	private ResourceController resourceController;
-	private Thread resourceControllerThread;
-	
-	private ReceiveQueue receiveQueue;
-	private Thread receiveQueueThread;
+public class ResourceManager extends PassiveQueue<Message> implements Runnable, Timable {
+	private Timer timer;
+	private boolean shouldStop;
 	
 	public ResourceManager() {
-		resourceController = new ResourceController();
-		resourceControllerThread = new Thread(resourceController);
-
-		receiveQueue = new ReceiveQueue(resourceController, port);
-		receiveQueueThread = new Thread(receiveQueue);
 		
-		receiveQueueThread.start();
-		resourceControllerThread.start();
 	}
 	
-	public void destroy_manager() {
-		resourceController.stop();
-		receiveQueue.stop();
+	public synchronized void update_nodes() {
+		/* ConcurrentModification 해결을 위해 복사 */
+		HashMap<String, Integer> temp = (HashMap<String, Integer>)ServerInfo.getAliveServerMap().clone();
 		
-		try {
-			resourceControllerThread.join();
-			receiveQueueThread.join();
-		} catch (InterruptedException e) {
-			
+		for(Map.Entry<String, Integer> entry : ServerInfo.getAliveServerMap().entrySet()) {
+			temp.put(entry.getKey(),entry.getValue() + HEARTBEAT_TICK);
+			if(temp.get(entry.getKey()) > HEARTBEAT_TIMEOUT) {
+				temp.remove(entry.getKey());
+				System.out.println(entry.getKey() + " Down");
+			}
 		}
 		
-		receiveQueue = null;
-		receiveQueue = null;
-		
-		resourceControllerThread = null;
-		receiveQueueThread = null;
+		ServerInfo.setAliveServerMap(temp);
 	}
+	
+	public void timeout(String type) {
+		Message msg = new Message("RESOURCEMANAGER", "TIMEOUT", "", "");
+		super.accept(msg);
+	}
+	
+	public synchronized void update_nodes(String ip) {
+		ServerInfo.setAliveServerMap(ip);
+	}
+	
+	public void startTimer(String type) {
+		stopTimer();
+		timer = new Timer(this, type);
+		timer.start();
+	}
+	
+	public void stopTimer() {
+		if(timer != null)
+		{
+			timer.interrupt();
+			try {
+				timer.join();
+			} catch (InterruptedException e) {
+				
+			}
+			timer = null;
+		}
+	}
+	
+	public void stop() {
+		stopTimer();
+		shouldStop = true;
+		destroy();
+	}
+	
+	public void run() {	
+		System.out.println("RESOURCEMANAGER UP");
+		
+		startTimer("HEARTBEAT");
+		
+		while(!shouldStop) {
+			Message msg = super.release();
+			if(msg != null) {
+				switch(msg.getFlag()) {
+				case "HEARTBEAT":
+					update_nodes(msg.getAddr());
+					break;
+				case "TIMEOUT":
+					update_nodes();
+					startTimer("HEARTBEAT");
+					break;
+				}
+			}
+		}
+		
+		stopTimer();
+		System.out.println("RESOURCE MANAGER DOWN");
+	}	
 }

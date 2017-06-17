@@ -1,48 +1,73 @@
 package resource;
 
-import election.ElectionController;
 import server.*;
 import timer.Timable;
 import timer.Timer;
 
-public class NodeManager {
-	private final int port = 10002;
-	
-	private NodeController nodeController;
-	private Thread nodeControllerThread;
-
-	private SendQueue sendQueue;
-	private Thread sendQueueThread;
-	
+public class NodeManager extends PassiveQueue<Message> implements Runnable, Timable {
 	private boolean shouldStop;
 	private Timer timer;
-
-	public NodeManager() {
-		sendQueue = new SendQueue(port);
-		sendQueueThread = new Thread(sendQueue);
-		
-		nodeController = new NodeController(sendQueue);
-		nodeControllerThread = new Thread(nodeController);
-		
-		sendQueueThread.start();
-		nodeControllerThread.start();
+	
+	private SendQueue sendQueue;
+	
+	public NodeManager(SendQueue sendQueue) {
+		this.sendQueue = sendQueue;
+		shouldStop = false;
 	}
 	
-	public void destroy_manager() {
+	public void send_heartbeat() {
+		Message smsg = new Message("RESOURCEMANAGER", "HEARTBEAT", ServerInfo.getCoordinator(), "");
+		sendQueue.accept(smsg);
+	}
+	
+	public void stop() {
+		stopTimer();
 		sendQueue.stop();
-		nodeController.stop();
-		
-		try {
-			sendQueueThread.join();
-			nodeControllerThread.join();
-		} catch (InterruptedException e) {
-			
+		shouldStop = true;
+		destroy();
+	}
+
+	public void timeout(String type) {
+		Message msg = new Message("NODEMANAGER", "TIMEOUT", "", "");
+		super.accept(msg);
+	}
+	
+	public void startTimer(String type) {
+		stopTimer();
+		timer = new Timer(this, type);
+		timer.start();
+	}
+	
+	public void stopTimer() {
+		if(timer != null)
+		{
+			timer.interrupt();
+			try {
+				timer.join();
+			} catch (InterruptedException e) {
+				
+			}
+			timer = null;
 		}
+	}
+	
+	public void run() {
+		System.out.println("NODEMANAGER UP");
 		
-		sendQueue = null;
-		nodeController = null;
+		startTimer("HEARTBEAT");
 		
-		sendQueueThread = null;
-		nodeControllerThread = null;
+		while(!shouldStop) {
+			Message msg = super.release();
+			if(msg != null) {
+				switch(msg.getFlag()) {
+				case "TIMEOUT":
+					send_heartbeat();
+					startTimer("HEARTBEAT");
+					break;
+				}
+			}
+		}
+
+		System.out.println("NODEMANAGER DOWN");
 	}
 }

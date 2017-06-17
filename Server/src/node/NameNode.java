@@ -52,8 +52,8 @@ public class NameNode<E> implements Runnable {
 			id++;
 			
 			requestMap.put(id, new Service(id, addr, new KMP(text, pattern)));
-			if(Server.getAliveServerMap().size() > 0)
-				requestMap.get(id).devide(Server.getAliveServerMap().size());
+			if(ServerInfo.getAliveServerMap().size() > 0)
+				requestMap.get(id).devide(ServerInfo.getAliveServerMap().size());
 		} catch (IOException e) {
 
 		}

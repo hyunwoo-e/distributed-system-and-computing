@@ -40,13 +40,14 @@ public class SendQueue extends PassiveQueue<Message> implements Runnable {
 					dos.close();
 					socket.close();
 				} catch (IOException e) {
-					if(msg.getAddr().equals(Server.getCoordinator())) {
+					if(msg.getAddr().equals(ServerInfo.getCoordinator())) {
 						/* 브로커에 Coordinator가 Down됨을 알림 */
 						/* 클라이언트 프록시는 서버 프록시에 다시 서비스를 요청 */
 						
 						/* Coordinator를 선정하기 위해 일렉션을 실행 */
-						if(Server.getIsCoordinatorAlive() == true) {
-							Server.setIsCoordinatorAlive(false);
+						if(ServerInfo.getIsCoordinatorAlive() == true) {
+							ServerInfo.setIsCoordinatorAlive(false);
+							Server.alertMessage.enqueue("START_ELECTION");
 						}
 					}
 				}

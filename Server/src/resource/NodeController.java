@@ -1,73 +1,48 @@
 package resource;
 
+import election.ElectionManager;
 import server.*;
 import timer.Timable;
 import timer.Timer;
 
-public class NodeController extends PassiveQueue<Message> implements Runnable, Timable {
+public class NodeController {
+	private final int port = 10002;
+	
+	private NodeManager nodeManager;
+	private Thread nodeManagerThread;
+
+	private SendQueue sendQueue;
+	private Thread sendQueueThread;
+	
 	private boolean shouldStop;
 	private Timer timer;
-	
-	private SendQueue sendQueue;
-	
-	public NodeController(SendQueue sendQueue) {
-		this.sendQueue = sendQueue;
-		shouldStop = false;
+
+	public NodeController() {
+		sendQueue = new SendQueue(port);
+		sendQueueThread = new Thread(sendQueue);
+		
+		nodeManager = new NodeManager(sendQueue);
+		nodeManagerThread = new Thread(nodeManager);
+		
+		sendQueueThread.start();
+		nodeManagerThread.start();
 	}
 	
-	public void send_heartbeat() {
-		Message smsg = new Message("RESOURCEMANAGER", "HEARTBEAT", Server.getCoordinator(), "");
-		sendQueue.accept(smsg);
-	}
-	
-	public void stop() {
-		stopTimer();
+	public void destroy_manager() {
 		sendQueue.stop();
-		shouldStop = true;
-		destroy();
-	}
-
-	public void timeout(String type) {
-		Message msg = new Message("NODEMANAGER", "TIMEOUT", "", "");
-		super.accept(msg);
-	}
-	
-	public void startTimer(String type) {
-		stopTimer();
-		timer = new Timer(this, type);
-		timer.start();
-	}
-	
-	public void stopTimer() {
-		if(timer != null)
-		{
-			timer.interrupt();
-			try {
-				timer.join();
-			} catch (InterruptedException e) {
-				
-			}
-			timer = null;
-		}
-	}
-	
-	public void run() {
-		System.out.println("NODEMANAGER UP");
+		nodeManager.stop();
 		
-		startTimer("HEARTBEAT");
-		
-		while(!shouldStop) {
-			Message msg = super.release();
-			if(msg != null) {
-				switch(msg.getFlag()) {
-				case "TIMEOUT":
-					send_heartbeat();
-					startTimer("HEARTBEAT");
-					break;
-				}
-			}
+		try {
+			sendQueueThread.join();
+			nodeManagerThread.join();
+		} catch (InterruptedException e) {
+			
 		}
-
-		System.out.println("NODEMANAGER DOWN");
+		
+		sendQueue = null;
+		nodeManager = null;
+		
+		sendQueueThread = null;
+		nodeManagerThread = null;
 	}
 }

@@ -4,7 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import server.Server;
+import server.ServerInfo;
 
 public class Service {
 	private final int data_port = 10005;
@@ -54,7 +54,7 @@ public class Service {
 		int mod = kmp.text.length() % taskCount;
 		int j;
 		
-		for(Map.Entry<String, Integer> entry : Server.getAliveServerMap().entrySet()) {
+		for(Map.Entry<String, Integer> entry : ServerInfo.getAliveServerMap().entrySet()) {
 			
 			if(mod > i) j = 1; else j =0;
 			

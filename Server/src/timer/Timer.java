@@ -12,7 +12,7 @@ public class Timer extends Thread {
 	private final int HEARTBEAT_TICK = 5000;
 	
 	private final int ELECTION_TIMEOUT = 5000;
-	private final int OK_TIMEOUT = 10000;
+	private final int OK_TIMEOUT = 20000;
 	private final int HEARTBEAT_TIMEOUT = 50000;
 	
 	public Timer(Object manager, String type) {

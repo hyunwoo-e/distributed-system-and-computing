@@ -43,7 +43,7 @@ public class DataNode implements Runnable {
 				indexList = kmp.find_index();
 				
 				Socket sock = new Socket();
-				sock.connect(new InetSocketAddress(Server.getCoordinator(), name_port), sock_timeout);
+				sock.connect(new InetSocketAddress(ServerInfo.getCoordinator(), name_port), sock_timeout);
 				
 				DataOutputStream dos = new DataOutputStream(sock.getOutputStream());
 				dos.writeUTF("MERGE");

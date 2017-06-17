@@ -1,120 +1,194 @@
 package server;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
 
+import election.ElectionController;
 import node.*;
-import proxy.Proxy;
+import resource.NodeController;
+import resource.ResourceController;
 import timer.*;
 
 public class Server implements Runnable {
-	public static ArrayList<String> totalServerList;
-	public static HashMap<String, Integer> aliveServerMap;
-	public static String myAddr;
-	public static int myIndex;
+	public static GenericQueue<String> alertMessage;
 	
-	public static String coordinator;
-	public static boolean isCoordinatorAlive;
+	public static ElectionController electionController;
+	public static NodeController nodeController;
+	public static ResourceController resourceController;
 	
-	private static ServerController serverController;
+	public static NameNode nameNode;
+	public static DataNode dataNode;
+	private static Thread nameNodeThread;
+	private static Thread dataNodeThread;
 	
 	public Server() {
-		init_ip();
-		load_list();
-		init_index();
-		serverController = new ServerController();
+		alertMessage = new GenericQueue<String>();
 	}
 	
-	private void init_ip() {
-		try {
-			myAddr = InetAddress.getLocalHost().getHostAddress().toString();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/* Server Farm 내의 각 서버에 대한 주소를 list.txt 파일에서 읽어 초기화 */
-	private void load_list() {
-		aliveServerMap = new HashMap<String, Integer>();
-		totalServerList = new ArrayList<String>();
-		String addr ="";
-		
-		/* ipAddress 리스트 생성 */
-		try {
-			BufferedReader br = new BufferedReader(new FileReader("list.txt"));			
-			while((addr = br.readLine()) != null) {
-				totalServerList.add(addr);
-			}
-			br.close();
-		} catch (IOException e) {
-			
-		}
-	}
-	
-	private void init_index() {
-		myIndex = -1;
-		for(int i = 0 ; i < totalServerList.size(); i++) {
-			if(myAddr.equals(totalServerList.get(i).toString())) {
-				myIndex = i;
-			}
-		}
-	}
-
-	public static synchronized String getCoordinator() {
-		return coordinator;
-	}
-	
-	public static synchronized void setCoordinator(String c) {
-		coordinator = c;
-		setIsCoordinatorAlive(true);
-		serverController.start_managers();
-	}
-	
-	public static synchronized void setIsCoordinatorAlive(boolean isAlive) {
-		isCoordinatorAlive = isAlive;
-		
-		/* Coordinator가 Down 되었을 때 Election이 실행 */
-		if(isCoordinatorAlive == false)
+	public synchronized static void start_managers() {
+		if(ServerInfo.myAddr.equals(ServerInfo.getCoordinator()))
 		{
-			serverController.electionManager.restart_election();
+			/* 자신이 Coordinator일 경우 ResourceManager를 실행 */
+			start_resource_manager();
+			/* 자신이 Coordinator일 경우 NameNode를 실행 */
+			start_name_node();
+		}
+		else {
+			/* 자신이 Coordinator가 아닐 경우 ResourceManager를 종료 */
+			stop_resource_manager();
+			/* 자신이 Coordinator가 아닐 경우 NameNode를 종료 */
+			stop_name_node();
+		}
+		/* Coordinator가 선정되면 NodeManager를 실행 */
+		stop_node_manager();
+		start_node_manager();
+		/* Coordinator가 선정되면 DataNode를 실행 */
+		stop_data_node();
+		start_data_node();
+	}
+	
+	public synchronized static void stop_managers() {
+			stop_resource_manager();
+			stop_node_manager();
+			stop_election_manager();
+			stop_name_node();
+			stop_data_node();
+	}
+	
+	public synchronized static  void start_election_manager() {
+		if(electionController == null) {
+			electionController = new ElectionController();
 		}
 	}
 	
-	public static synchronized boolean getIsCoordinatorAlive() {
-		return isCoordinatorAlive;
+	public synchronized static  void stop_election_manager() {
+		if(electionController != null) {
+			electionController.destroy_manager();
+			electionController = null;
+		}
 	}
 	
-	public static synchronized HashMap<String, Integer> getAliveServerMap() {
-		return aliveServerMap;
+	public synchronized static  void start_resource_manager() {
+		if(resourceController == null) {
+			ServerInfo.aliveServerMap.clear();
+			resourceController = new ResourceController();
+		}
 	}
 	
-	public static synchronized void setAliveServerMap(HashMap<String, Integer> temp) {
-		aliveServerMap = temp;
+	public synchronized static  void stop_resource_manager() {
+		if(resourceController != null) {
+			resourceController.destroy_manager();
+			resourceController = null;
+		}
 	}
 	
-	public static synchronized void setAliveServerMap(String ip) {
-		aliveServerMap.put(ip, 0);
-		System.out.println("HEARTBEAT FROM :" + ip + " / THE NUMBER OF SERVER :" + aliveServerMap.size());
+	public synchronized static  void start_node_manager() {
+		if(nodeController == null) {
+			nodeController = new NodeController();
+		}
+	}
+	
+	public synchronized static  void stop_node_manager() {
+		if(nodeController != null) {
+			nodeController.destroy_manager();
+			nodeController = null;
+		}
+	}
+	
+	public synchronized static  void start_name_node() {
+		if(nameNode == null) {
+			nameNode = new NameNode();
+			nameNodeThread = new Thread(nameNode);
+			nameNodeThread.start();
+		}
+	}
+	
+	public synchronized static  void stop_name_node() {
+		if(nameNode != null) {
+			try {
+				if(nameNode.serverSocket != null) {
+					nameNodeThread.interrupt();
+					nameNode.serverSocket.close();
+					try {
+						nameNodeThread.join();
+					} catch (InterruptedException e) {
+						
+					}
+				}
+			} catch (IOException e) {
+				
+			}
+			nameNodeThread = null;
+			nameNode = null;
+		}
+	}
+	
+	public synchronized static  void start_data_node() {
+		if(dataNode == null) {
+			dataNode = new DataNode();
+			dataNodeThread = new Thread(dataNode);
+			dataNodeThread.start();
+		}
+	}
+	
+	public synchronized static  void stop_data_node() {
+		if(dataNode != null) {
+			try {
+				if(dataNode.serverSocket != null) {
+					dataNodeThread.interrupt();
+					dataNode.serverSocket.close();
+					try {
+						dataNodeThread.join();
+					} catch (InterruptedException e) {
+						
+					}
+				}
+			} catch (IOException e) {
+				
+			}
+			dataNodeThread = null;
+			dataNode = null;
+		}
 	}
 	
 	public void run() {
-		if(myIndex == -1) {
+		if(ServerInfo.myIndex == -1) {
 			System.out.println("로컬 서버를 목록에서 찾을 수 없음");
 			return;
 		}
 		System.out.println("SERVER UP");
 
-		serverController.start_election_manager();
+		start_election_manager();
 
 		Thread.currentThread();
-		while(!Thread.interrupted());
+		while(!Thread.interrupted()) {
+			resolveAlertMessage();
+		}
 	
-		serverController.stop_managers();
+		stop_managers();
 	}
 	
+	public static synchronized void registerAlertMessage(String m) {
+		alertMessage.enqueue(m);
+	}
+	
+	private static synchronized void resolveAlertMessage() {
+		if(alertMessage.size() > 0) {
+			switch(alertMessage.dequeue()) {
+			case "START_MANAGER":
+				start_managers();
+			break;
+			case "START_ELECTION":
+				if(ServerInfo.getIsCoordinatorAlive() == false)
+				{
+					electionController.restart_election();
+				}
+			break;
+			}
+		}
+	}
 	
 	public static void main (String[] args) {
+		ServerInfo serverInfo = new ServerInfo();
 		Server server = new Server();
 		Thread t = new Thread(server);
 		t.start();	

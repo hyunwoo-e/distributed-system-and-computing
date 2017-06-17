@@ -1,88 +1,48 @@
 package resource;
 
 import java.util.*;
+
+import election.ElectionManager;
 import server.*;
 import timer.Timable;
 import timer.Timer;
 
-public class ResourceController extends PassiveQueue<Message> implements Runnable, Timable {
-	private Timer timer;
-	private boolean shouldStop;
+public class ResourceController {
+
+	private final int port = 10002;
+
+	private ResourceManager resourceManager;
+	private Thread resourceManagerThread;
+	
+	private ReceiveQueue receiveQueue;
+	private Thread receiveQueueThread;
 	
 	public ResourceController() {
+		resourceManager = new ResourceManager();
+		resourceManagerThread = new Thread(resourceManager);
+
+		receiveQueue = new ReceiveQueue(resourceManager, port);
+		receiveQueueThread = new Thread(receiveQueue);
 		
+		receiveQueueThread.start();
+		resourceManagerThread.start();
 	}
 	
-	public synchronized void update_nodes() {
-		/* ConcurrentModification 해결을 위해 복사 */
-		HashMap<String, Integer> temp = (HashMap<String, Integer>)Server.getAliveServerMap().clone();
+	public void destroy_manager() {
+		resourceManager.stop();
+		receiveQueue.stop();
 		
-		for(Map.Entry<String, Integer> entry : Server.getAliveServerMap().entrySet()) {
-			temp.put(entry.getKey(),entry.getValue() + HEARTBEAT_TICK);
-			if(temp.get(entry.getKey()) > HEARTBEAT_TIMEOUT) {
-				temp.remove(entry.getKey());
-				System.out.println(entry.getKey() + " Down");
-			}
+		try {
+			resourceManagerThread.join();
+			receiveQueueThread.join();
+		} catch (InterruptedException e) {
+			
 		}
 		
-		Server.setAliveServerMap(temp);
-	}
-	
-	public void timeout(String type) {
-		Message msg = new Message("RESOURCEMANAGER", "TIMEOUT", "", "");
-		super.accept(msg);
-	}
-	
-	public synchronized void update_nodes(String ip) {
-		Server.setAliveServerMap(ip);
-	}
-	
-	public void startTimer(String type) {
-		stopTimer();
-		timer = new Timer(this, type);
-		timer.start();
-	}
-	
-	public void stopTimer() {
-		if(timer != null)
-		{
-			timer.interrupt();
-			try {
-				timer.join();
-			} catch (InterruptedException e) {
-				
-			}
-			timer = null;
-		}
-	}
-	
-	public void stop() {
-		stopTimer();
-		shouldStop = true;
-		destroy();
-	}
-	
-	public void run() {	
-		System.out.println("RESOURCEMANAGER UP");
+		receiveQueue = null;
+		receiveQueue = null;
 		
-		startTimer("HEARTBEAT");
-		
-		while(!shouldStop) {
-			Message msg = super.release();
-			if(msg != null) {
-				switch(msg.getFlag()) {
-				case "HEARTBEAT":
-					update_nodes(msg.getAddr());
-					break;
-				case "TIMEOUT":
-					update_nodes();
-					startTimer("HEARTBEAT");
-					break;
-				}
-			}
-		}
-		
-		stopTimer();
-		System.out.println("RESOURCE MANAGER DOWN");
-	}	
+		resourceManagerThread = null;
+		receiveQueueThread = null;
+	}
 }
