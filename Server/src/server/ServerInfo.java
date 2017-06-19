@@ -3,12 +3,13 @@ package server;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-
 import node.*;
-import proxy.Proxy;
-import timer.*;
 
 public class ServerInfo {
+	
+	public static final int election_port = 10001;
+	public static final int resource_port = 10002;
+	
 	public static ArrayList<String> totalServerList;
 	public static HashMap<String, Integer> aliveServerMap;
 	public static String myAddr;

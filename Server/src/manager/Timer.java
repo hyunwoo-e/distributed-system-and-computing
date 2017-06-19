@@ -1,9 +1,9 @@
-package timer;
+package manager;
 
 public class Timer extends Thread {
 
 	private String type;
-	private Object manager;
+	private Manager manager;
 	
 	private float elapsed_time;
 	private float expire_time;
@@ -15,7 +15,7 @@ public class Timer extends Thread {
 	private final int OK_TIMEOUT = 20000;
 	private final int HEARTBEAT_TIMEOUT = 50000;
 	
-	public Timer(Object manager, String type) {
+	public Timer(Manager manager, String type) {
 		this.manager = manager;
 		this.type = type;
 		
@@ -44,7 +44,7 @@ public class Timer extends Thread {
 
 				elapsed_time += TIMER_TICK;
 				if(elapsed_time >= expire_time) {
-					((Timable)manager).timeout(type);
+					manager.timeout(type);
 					Thread.currentThread().interrupt();
 				}
 

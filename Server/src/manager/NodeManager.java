@@ -1,28 +1,26 @@
-package resource;
+package manager;
 
 import server.*;
-import timer.Timable;
-import timer.Timer;
 
-public class NodeManager extends PassiveQueue<Message> implements Runnable, Timable {
+public class NodeManager extends PassiveQueue<Message> implements Runnable, Manager {
 	private boolean shouldStop;
 	private Timer timer;
 	
-	private SendQueue sendQueue;
+	private Sender sender;
 	
-	public NodeManager(SendQueue sendQueue) {
-		this.sendQueue = sendQueue;
+	public NodeManager(Sender sender) {
+		this.sender = sender;
 		shouldStop = false;
 	}
 	
 	public void send_heartbeat() {
 		Message smsg = new Message("RESOURCEMANAGER", "HEARTBEAT", ServerInfo.getCoordinator(), "");
-		sendQueue.accept(smsg);
+		sender.accept(smsg);
 	}
 	
 	public void stop() {
 		stopTimer();
-		sendQueue.stop();
+		sender.stop();
 		shouldStop = true;
 		destroy();
 	}

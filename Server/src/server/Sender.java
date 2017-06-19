@@ -3,12 +3,12 @@ package server;
 import java.io.*;
 import java.net.*;
 
-public class SendQueue extends PassiveQueue<Message> implements Runnable {
+public class Sender extends PassiveQueue<Message> implements Runnable {
 	private final int port;
 	private final int sock_timeout = 1000;
 	private boolean shouldStop;
 	
-	public SendQueue(int port) {
+	public Sender(int port) {
 		this.port = port;
 		shouldStop = false;
 	}

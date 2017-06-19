@@ -1,11 +1,9 @@
-package resource;
+package manager;
 
 import java.util.*;
 import server.*;
-import timer.Timable;
-import timer.Timer;
 
-public class ResourceManager extends PassiveQueue<Message> implements Runnable, Timable {
+public class ResourceManager extends PassiveQueue<Message> implements Runnable, Manager {
 	private Timer timer;
 	private boolean shouldStop;
 	
@@ -18,8 +16,8 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 		HashMap<String, Integer> temp = (HashMap<String, Integer>)ServerInfo.getAliveServerMap().clone();
 		
 		for(Map.Entry<String, Integer> entry : ServerInfo.getAliveServerMap().entrySet()) {
-			temp.put(entry.getKey(),entry.getValue() + HEARTBEAT_TICK);
-			if(temp.get(entry.getKey()) > HEARTBEAT_TIMEOUT) {
+			temp.put(entry.getKey(),entry.getValue() + 1);
+			if(temp.get(entry.getKey()) > 10) {
 				temp.remove(entry.getKey());
 				System.out.println(entry.getKey() + " Down");
 			}

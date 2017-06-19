@@ -1,17 +1,16 @@
-package election;
+package manager;
 
 import server.*;
-import timer.*;
 
-public class ElectionManager  extends PassiveQueue<Message> implements Runnable, Timable {
+public class ElectionManager  extends PassiveQueue<Message> implements Runnable, Manager {
 	private boolean shouldStop;
 	private Timer timer;
-	private SendQueue sendQueue;
+	private Sender sender;
 	
 	private boolean isElectionStarted;
 	
-	public ElectionManager(SendQueue sendQueue) {
-		this.sendQueue = sendQueue;
+	public ElectionManager(Sender sendQueue) {
+		this.sender = sendQueue;
 		shouldStop = false;
 	}
 	
@@ -33,7 +32,7 @@ public class ElectionManager  extends PassiveQueue<Message> implements Runnable,
 		if(getIsElectionStarted() == true) {
 			for(int i = 0 ; i <= ServerInfo.myIndex; i++) {
 				Message smsg = new Message("ELECTIONMANAGER", "COORDINATOR", ServerInfo.totalServerList.get(i), ServerInfo.myAddr);
-				sendQueue.accept(smsg);
+				sender.accept(smsg);
 				//Server.getMessageQueue().accept(smsg);
 			}
 		}
@@ -55,7 +54,7 @@ public class ElectionManager  extends PassiveQueue<Message> implements Runnable,
 	/* Election 메시지를 받으면 Ok 메시지를 전송하고, 자신의 index보다 큰 서버에 Election 메시지를 전송 */
 	public void send_ok(Message rmsg) {		
 		Message smsg = new Message("ELECTIONMANAGER", "OK", rmsg.getAddr(), "");
-		sendQueue.accept(smsg);
+		sender.accept(smsg);
 		//Server.getMessageQueue().accept(smsg);
 	}
 	
@@ -65,7 +64,7 @@ public class ElectionManager  extends PassiveQueue<Message> implements Runnable,
 			setIsElectionStarted(true);
 			for(int i = ServerInfo.myIndex + 1 ; i < ServerInfo.totalServerList.size(); i++) {
 				Message smsg = new Message("ELECTIONMANAGER", "ELECTION", ServerInfo.totalServerList.get(i), "");
-				sendQueue.accept(smsg);
+				sender.accept(smsg);
 				//Server.getMessageQueue().accept(smsg);
 			}
 			startTimer("ELECTION");

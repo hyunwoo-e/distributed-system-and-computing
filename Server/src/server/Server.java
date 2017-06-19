@@ -2,18 +2,15 @@ package server;
 
 import java.io.IOException;
 
-import election.ElectionController;
+import manager.*;
 import node.*;
-import resource.NodeController;
-import resource.ResourceController;
-import timer.*;
 
 public class Server implements Runnable {
 	public static GenericQueue<String> alertMessage;
 	
-	public static ElectionController electionController;
-	public static NodeController nodeController;
-	public static ResourceController resourceController;
+	public static ManagerMaker electionManagerMaker;
+	public static ManagerMaker nodeManagerMaker;
+	public static ManagerMaker resourceManagerMaker;
 	
 	public static NameNode nameNode;
 	public static DataNode dataNode;
@@ -55,42 +52,42 @@ public class Server implements Runnable {
 	}
 	
 	public synchronized static  void start_election_manager() {
-		if(electionController == null) {
-			electionController = new ElectionController();
+		if(electionManagerMaker == null) {
+			electionManagerMaker = new ManagerMaker(ServerInfo.election_port, "ELECTIONMANAGER");
 		}
 	}
 	
 	public synchronized static  void stop_election_manager() {
-		if(electionController != null) {
-			electionController.destroy_manager();
-			electionController = null;
+		if(electionManagerMaker != null) {
+			electionManagerMaker.destroy_manager();
+			electionManagerMaker = null;
 		}
 	}
 	
 	public synchronized static  void start_resource_manager() {
-		if(resourceController == null) {
+		if(resourceManagerMaker == null) {
 			ServerInfo.aliveServerMap.clear();
-			resourceController = new ResourceController();
+			resourceManagerMaker = new ManagerMaker(ServerInfo.resource_port, "RESOURCEMANAGER");
 		}
 	}
 	
 	public synchronized static  void stop_resource_manager() {
-		if(resourceController != null) {
-			resourceController.destroy_manager();
-			resourceController = null;
+		if(resourceManagerMaker != null) {
+			resourceManagerMaker.destroy_manager();
+			resourceManagerMaker = null;
 		}
 	}
 	
 	public synchronized static  void start_node_manager() {
-		if(nodeController == null) {
-			nodeController = new NodeController();
+		if(nodeManagerMaker == null) {
+			nodeManagerMaker = new ManagerMaker(ServerInfo.resource_port, "NODEMANAGER");
 		}
 	}
 	
 	public synchronized static  void stop_node_manager() {
-		if(nodeController != null) {
-			nodeController.destroy_manager();
-			nodeController = null;
+		if(nodeManagerMaker != null) {
+			nodeManagerMaker.destroy_manager();
+			nodeManagerMaker = null;
 		}
 	}
 	
@@ -180,7 +177,7 @@ public class Server implements Runnable {
 			case "START_ELECTION":
 				if(ServerInfo.getIsCoordinatorAlive() == false)
 				{
-					electionController.restart_election();
+					((ElectionManager)electionManagerMaker.manager).start_election();
 				}
 			break;
 			}

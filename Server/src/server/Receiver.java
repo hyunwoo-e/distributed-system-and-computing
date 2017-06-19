@@ -2,17 +2,18 @@ package server;
 
 import java.io.*;
 import java.net.*;
+import manager.*;
 
-public class ReceiveQueue implements Runnable {
+public class Receiver implements Runnable {
 	
-	private PassiveQueue<Message> controller;
+	private Manager manager;
 	private boolean shouldStop;
 	
 	private int port;	
 	public ServerSocket serverSocket;
 	
-	public ReceiveQueue(PassiveQueue<Message> controller, int port) {
-		this.controller = controller;
+	public Receiver(Manager manager, int port) {
+		this.manager = manager;
 		this.port = port;
 		shouldStop = false;
 		try {
@@ -44,7 +45,7 @@ public class ReceiveQueue implements Runnable {
 				
 				Message msg = new Message(type, flag, addr, data);
 				
-				controller.accept(msg);
+				((PassiveQueue<Message>)manager).accept(msg);
 				
 				dis.close();
 				socket.close();
