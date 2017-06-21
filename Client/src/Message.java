@@ -1,13 +1,14 @@
 
 
 public class Message {
-	
-	private String type; /* register, request */
-	private String addr;
+	private String type;
+	private String flag;
+	private String addr; 
 	private String data;
 	
-	public Message(String type, String addr, String data) {
+	public Message(String type, String flag, String addr, String data) {
 		this.type = type;
+		this.flag = flag;
 		this.addr = addr;
 		this.data = data;
 	}
@@ -20,6 +21,14 @@ public class Message {
 		this.type = type;
 	}
 
+	public String getFlag() {
+		return flag;
+	}
+
+	public void setFlag(String flag) {
+		this.flag = flag;
+	}
+	
 	public String getAddr() {
 		return addr;
 	}

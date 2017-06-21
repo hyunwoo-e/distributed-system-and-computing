@@ -44,7 +44,7 @@ public class Timer extends Thread {
 
 				elapsed_time += TIMER_TICK;
 				if(elapsed_time >= expire_time) {
-					manager.timeout(type);
+					expire();
 					Thread.currentThread().interrupt();
 				}
 
@@ -52,5 +52,9 @@ public class Timer extends Thread {
 				Thread.currentThread().interrupt();
 			}
 		}
+	}
+	
+	public void expire() {
+		manager.timeout(type);
 	}
 }

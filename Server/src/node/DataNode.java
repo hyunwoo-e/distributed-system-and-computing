@@ -4,16 +4,29 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import server.*;
+import service.KMP;
+import service.Processor;
 
-public class DataNode implements Runnable {
+public class DataNode extends Thread {
 	private final int sock_timeout = 2000;
-	
 	private final int name_port = 10004;
-	private final int data_port = 10005;	
+	private final int data_port = 10005;
+	private ServerSocket serverSocket;
 	
-	public ServerSocket serverSocket;
+	private boolean shouldStop;
+
+	private String requestAddress;
+	private int serviceIdentifier;
+	private int taskIdentifier;
+	private int taskCount;
+	private String command;
+	private String arg;
+	
+	private Processor processor;
+	private String responseData;
 	
 	public DataNode() {
+		shouldStop = false;
 		try {
 			serverSocket = new ServerSocket(data_port);
 		} catch (IOException e) {
@@ -21,51 +34,71 @@ public class DataNode implements Runnable {
 		}
 	}
 	
+	public void _stop() {
+		shouldStop = true;
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+			
+		}
+	}
+	
+	public void acceptRequest() {
+		Socket socket;
+		try {
+			socket = serverSocket.accept();
+			DataInputStream dis = new DataInputStream(socket.getInputStream());
+
+			requestAddress = dis.readUTF();
+			serviceIdentifier = dis.readInt();
+			taskIdentifier = dis.readInt();
+			taskCount = dis.readInt();
+			command = dis.readUTF();
+			arg = dis.readUTF();
+			
+			dis.close();
+			socket.close();
+		} catch (IOException e) {
+
+		}
+	}
+	
+	public void response() {
+		try {
+			Socket sock = new Socket();
+			sock.connect(new InetSocketAddress(ServerInfo.getCoordinator(), name_port), sock_timeout);
+			DataOutputStream dos = new DataOutputStream(sock.getOutputStream());
+			
+			dos.writeUTF("response");
+			dos.writeUTF(ServerInfo.myAddr);
+			dos.writeInt(serviceIdentifier);
+			dos.writeInt(taskIdentifier);
+			dos.writeUTF(responseData);				
+			
+			dos.close();
+			sock.close();
+		} catch (IOException e) {
+
+		}
+	}
+	
 	public void run() {	
 		System.out.println("DATANODE UP");
 		
-		Thread.currentThread();
-		while(!Thread.interrupted()) {
-			try {
-				Socket socket = serverSocket.accept();
-				DataInputStream dis = new DataInputStream(socket.getInputStream());
-
-				int id = dis.readInt();
-				String addr = dis.readUTF();
-				int cur = dis.readInt();
-				String text = dis.readUTF();
-				String pattern = dis.readUTF();
-
-				KMP kmp = new KMP(text, pattern);
-				kmp.make_pi();
-				
-				ArrayList<Integer> indexList;
-				indexList = kmp.find_index();
-				
-				Socket sock = new Socket();
-				sock.connect(new InetSocketAddress(ServerInfo.getCoordinator(), name_port), sock_timeout);
-				
-				DataOutputStream dos = new DataOutputStream(sock.getOutputStream());
-				dos.writeUTF("MERGE");
-				dos.writeInt(id);
-				dos.writeUTF(addr);
-				dos.writeInt(cur);
-								
-				for(Integer i : indexList) {
-					dos.writeInt(i);
-				}
-				dos.writeInt(-1);
-				
-				dos.close();
-				sock.close();
-				
-				dis.close();
-				socket.close();
-			} catch (IOException e) {
-				
+		while(!shouldStop) {
+			acceptRequest();
+			if(!shouldStop) {
+				processor = new KMP(command, arg, taskIdentifier, taskCount);
+				responseData = processor.process().toString();
+				response();
 			}
 		}
 		
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+
+		}
 		System.out.println("DATANODE DOWN");
 	}	
 }

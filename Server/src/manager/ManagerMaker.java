@@ -41,6 +41,8 @@ public class ManagerMaker {
 				managerThread.start();
 				receiverThread.start();
 				break;
+			case "":
+				break;
 		}
 	}
 	

@@ -32,28 +32,32 @@ public class Receiver implements Runnable {
 		}		
 	}
 	
+	public void receive() {
+		try {
+			Socket socket = serverSocket.accept();
+			DataInputStream dis = new DataInputStream(socket.getInputStream());
+
+			String type = dis.readUTF();
+			String flag = dis.readUTF();
+			String addr = dis.readUTF(); addr = socket.getInetAddress().toString().replaceAll("/", "");
+			String data = dis.readUTF();
+			
+			Message msg = new Message(type, flag, addr, data);
+			
+			((PassiveQueue<Message>)manager).accept(msg);
+			
+			dis.close();
+			socket.close();
+		} catch (IOException e) {
+			
+		}
+	}
+
 	public void run() {
 		while(!shouldStop) {			
-			try {
-				Socket socket = serverSocket.accept();
-				DataInputStream dis = new DataInputStream(socket.getInputStream());
-
-				String type = dis.readUTF();
-				String flag = dis.readUTF();
-				String addr = dis.readUTF(); addr = socket.getInetAddress().toString().replaceAll("/", "");
-				String data = dis.readUTF();
-				
-				Message msg = new Message(type, flag, addr, data);
-				
-				((PassiveQueue<Message>)manager).accept(msg);
-				
-				dis.close();
-				socket.close();
-			} catch (IOException e) {
-				
-			}
+			receive();
 		}
-
+		
 		try {
 			serverSocket.close();
 		} catch (IOException e) {

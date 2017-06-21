@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import manager.*;
 import node.*;
+import proxy.*;
 
 public class Server implements Runnable {
 	public static GenericQueue<String> alertMessage;
@@ -14,8 +15,7 @@ public class Server implements Runnable {
 	
 	public static NameNode nameNode;
 	public static DataNode dataNode;
-	private static Thread nameNodeThread;
-	private static Thread dataNodeThread;
+	public static Proxy proxy;
 	
 	public Server() {
 		alertMessage = new GenericQueue<String>();
@@ -28,12 +28,16 @@ public class Server implements Runnable {
 			start_resource_manager();
 			/* 자신이 Coordinator일 경우 NameNode를 실행 */
 			start_name_node();
+			/* 자신이 Coordinator일 경우 Proxy를 실행 */
+			start_proxy();
 		}
 		else {
 			/* 자신이 Coordinator가 아닐 경우 ResourceManager를 종료 */
 			stop_resource_manager();
 			/* 자신이 Coordinator가 아닐 경우 NameNode를 종료 */
 			stop_name_node();
+			/* 자신이 Coordinator가 아닐 경우 Proxy를 종료 */
+			stop_proxy();
 		}
 		/* Coordinator가 선정되면 NodeManager를 실행 */
 		stop_node_manager();
@@ -47,8 +51,11 @@ public class Server implements Runnable {
 			stop_resource_manager();
 			stop_node_manager();
 			stop_election_manager();
+			
 			stop_name_node();
 			stop_data_node();
+			
+			stop_proxy();
 	}
 	
 	public synchronized static  void start_election_manager() {
@@ -91,30 +98,24 @@ public class Server implements Runnable {
 		}
 	}
 	
+	
+	
+	
 	public synchronized static  void start_name_node() {
 		if(nameNode == null) {
 			nameNode = new NameNode();
-			nameNodeThread = new Thread(nameNode);
-			nameNodeThread.start();
+			nameNode.start();
 		}
 	}
 	
 	public synchronized static  void stop_name_node() {
 		if(nameNode != null) {
+			nameNode._stop();
 			try {
-				if(nameNode.serverSocket != null) {
-					nameNodeThread.interrupt();
-					nameNode.serverSocket.close();
-					try {
-						nameNodeThread.join();
-					} catch (InterruptedException e) {
-						
-					}
-				}
-			} catch (IOException e) {
-				
+				nameNode.join();
+			} catch (InterruptedException e) {
+					
 			}
-			nameNodeThread = null;
 			nameNode = null;
 		}
 	}
@@ -122,30 +123,49 @@ public class Server implements Runnable {
 	public synchronized static  void start_data_node() {
 		if(dataNode == null) {
 			dataNode = new DataNode();
-			dataNodeThread = new Thread(dataNode);
-			dataNodeThread.start();
+			dataNode.start();
 		}
 	}
 	
-	public synchronized static  void stop_data_node() {
+	public synchronized static void stop_data_node() {
 		if(dataNode != null) {
+			dataNode._stop();
 			try {
-				if(dataNode.serverSocket != null) {
-					dataNodeThread.interrupt();
-					dataNode.serverSocket.close();
-					try {
-						dataNodeThread.join();
-					} catch (InterruptedException e) {
-						
-					}
-				}
-			} catch (IOException e) {
+				dataNode.join();
+			} catch (InterruptedException e) {
 				
 			}
-			dataNodeThread = null;
 			dataNode = null;
 		}
 	}
+	
+	
+	
+	
+	
+	public synchronized static  void start_proxy() {
+		if(proxy == null) {
+			proxy = new Proxy();
+			proxy.start();
+		}
+	}
+	
+	public synchronized static void stop_proxy() {
+		if(proxy != null) {
+			proxy._stop();
+			try {
+				proxy.join();
+			} catch (InterruptedException e) {
+				
+			}
+			proxy = null;
+		}
+	}
+	
+	
+	
+	
+	
 	
 	public void run() {
 		if(ServerInfo.myIndex == -1) {
@@ -168,7 +188,7 @@ public class Server implements Runnable {
 		alertMessage.enqueue(m);
 	}
 	
-	private static synchronized void resolveAlertMessage() {
+	public static synchronized void resolveAlertMessage() {
 		if(alertMessage.size() > 0) {
 			switch(alertMessage.dequeue()) {
 			case "START_MANAGER":
@@ -183,7 +203,7 @@ public class Server implements Runnable {
 			}
 		}
 	}
-	
+
 	public static void main (String[] args) {
 		ServerInfo serverInfo = new ServerInfo();
 		Server server = new Server();
