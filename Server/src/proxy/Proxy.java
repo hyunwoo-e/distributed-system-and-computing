@@ -27,12 +27,6 @@ public class Proxy extends Thread implements ServerProxy {
 		}
 	}
 	
-	/*
-	 * 캐싱 100초간 같은 쿼리에 대해
-	 * 접근제어
-	 * 투명성
-	 * */
-	
 	public void _stop() {
 		shouldStop = true;
 		try {

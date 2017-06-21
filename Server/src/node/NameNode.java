@@ -7,7 +7,7 @@ import server.*;
 import service.KMP;
 import service.Service;
 
-public class NameNode<E> extends Thread {
+public class NameNode extends Thread {
 
 	private final int proxy_port = 10003;
 	private final int name_port = 10004;
