@@ -91,7 +91,16 @@ public class KMP implements Processor {
 			int readlen = 0;
 			buf = new char[MAX*2];
 
+			int seek;
+			cbuf = new char[MAX];
+			for(seek = 0 ; seek+MAX < offset ; seek+=MAX) {
+				readlen += br.read(cbuf, 0, MAX);
+			}
+			readlen += br.read(cbuf, 0, offset-seek);
+			
+			readlen = 0;
 			int i = 0;
+			System.out.println(offset + " " + end);
 			for(i = 0 ; offset+MAX < end ; i++) {
 				System.arraycopy(buf, MAX, buf, 0, MAX);
 				cbuf = new char[MAX];

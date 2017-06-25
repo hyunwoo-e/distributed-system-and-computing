@@ -41,8 +41,11 @@ public class NameNode extends Thread {
 		}
 	}
 	
-	public void response(int serviceIdentifier) {		
-		String responseData = requestServiceMap.get(serviceIdentifier).result.toString().replaceAll(",", "").replaceAll("\\]", "").replaceAll("\\[", "");
+	public void response(int serviceIdentifier) {
+		TreeSet<Integer> treeSet = new TreeSet<Integer>(requestServiceMap.get(serviceIdentifier).result);
+		
+		//String responseData = treeSet.toString().replaceAll(",", "").replaceAll("\\]", "").replaceAll("\\[", "");
+		String responseData = treeSet.toString();
 		
 		try {
 			String requestAddress = requestServiceMap.get(serviceIdentifier).requestAddress;
@@ -51,7 +54,7 @@ public class NameNode extends Thread {
 			DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 			
 			dos.writeUTF("response");
-			dos.writeUTF("");
+			dos.writeUTF(requestServiceMap.get(serviceIdentifier).command + requestServiceMap.get(serviceIdentifier).arg);
 			dos.writeUTF(requestAddress);
 			dos.writeUTF(responseData);
 			
@@ -108,7 +111,7 @@ public class NameNode extends Thread {
 	}
 	
 	public void acceptRequest(String requestAddress, String command, String arg) {
-		HashMap<String, Integer> nodes = ServerInfo.getAliveServerMap();
+		TreeMap<String, Integer> nodes = ServerInfo.getAliveServerMap();
 		int taskCount = nodes.size();
 		int i = 0;
 		
@@ -128,10 +131,11 @@ public class NameNode extends Thread {
 		if(requestServiceMap.get(serviceIdentifier) == null)
 			return;
 			
-		responseData.replaceAll(",", "").replaceAll("\\]", "").replaceAll("\\]", "");
+		responseData = responseData.replaceAll(",", "").replaceAll("\\]", "").replaceAll("\\[", "");
 		StringTokenizer st = new StringTokenizer(responseData, " ");
 		while(st.hasMoreTokens()) {
-			requestServiceMap.get(serviceIdentifier).result.add(st.nextToken());
+			Integer data = Integer.parseInt(st.nextToken());
+			requestServiceMap.get(serviceIdentifier).result.add(data);
 		}
 			
 		requestServiceMap.get(serviceIdentifier).done.add(taskIdentifier);

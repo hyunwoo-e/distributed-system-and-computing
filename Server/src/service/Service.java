@@ -8,7 +8,7 @@ import server.ServerInfo;
 
 public class Service{
 	public String requestAddress;
-	public HashSet<String> result;
+	public HashSet<Integer> result;
 	public HashSet<Integer> done;
 	public int taskCount;
 	public String command;
@@ -19,7 +19,7 @@ public class Service{
 		this.taskCount = taskCount;
 		this.command = command;
 		this.arg = arg;
-		result = new HashSet<String>();
+		result = new HashSet<Integer>();
 		done = new HashSet<Integer>();
 	}	
 }

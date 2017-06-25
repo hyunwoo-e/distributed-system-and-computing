@@ -12,14 +12,17 @@ public class Proxy extends Thread implements ServerProxy {
 	private final int name_port = 10004;
 	private int sock_timeout = 2000;
 	
-	private DataInputStream dis;
+	private final int maxCacheCount = 10;
+	private HashMap<String, String> cacheMap;
 	
 	private boolean shouldStop;
 	
 	public ServerSocket serverSocket;
+	private DataInputStream dis;
 	
 	public Proxy() {
 		shouldStop = false;
+		cacheMap = new HashMap<String, String>();
 		try {
 			serverSocket = new ServerSocket(server_port);
 		} catch (IOException e) {
@@ -97,6 +100,12 @@ public class Proxy extends Thread implements ServerProxy {
 		} catch (IOException e) {
 			
 		}
+		
+		if(cacheMap.size() > maxCacheCount) {
+			Iterator<String> iteratorKey = cacheMap.keySet().iterator();
+			cacheMap.remove(iteratorKey.next());
+		}
+		cacheMap.put(msg.getFlag()+msg.getData(), null);
 	}
 	
 	public void acceptResponse(Message msg) {
@@ -117,6 +126,11 @@ public class Proxy extends Thread implements ServerProxy {
 			socket.close();
 		} catch (IOException e) {
 			
+		}
+		
+		if(cacheMap.containsKey(msg.getFlag())) {
+			if(cacheMap.get(msg.getFlag()) == null)
+				cacheMap.put(msg.getFlag(), msg.getData());
 		}
 	}
 	
@@ -145,8 +159,11 @@ public class Proxy extends Thread implements ServerProxy {
 						System.out.println("REGISTERED IN BROKER");
 						break;
 					case "request":
-						acceptRequest(msg);
-						
+						if(cacheMap.containsKey(msg.getFlag()+msg.getData()) && (cacheMap.get(msg.getFlag()+msg.getData()) != null)) {
+							acceptResponse(new Message("", "", msg.getAddr(), cacheMap.get(msg.getFlag()+msg.getData())));
+						} else {
+							acceptRequest(msg);
+						}
 						break;
 					case "response":
 						acceptResponse(msg);

@@ -16,8 +16,8 @@ public class Client implements Runnable, ClientProxy{
 	
 	private String server_address;
 	
-	String text = "abcabaabababc abcabaababcabcabaababc baabcabaababcbc abcabaababc";
-	String pattern = "abcabaababc";
+	String text = "";
+	String pattern = "";
 	
 	public Client()
 	{

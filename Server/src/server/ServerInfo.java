@@ -11,7 +11,7 @@ public class ServerInfo {
 	public static final int resource_port = 10002;
 	
 	public static ArrayList<String> totalServerList;
-	public static HashMap<String, Integer> aliveServerMap;
+	public static TreeMap<String, Integer> aliveServerMap;
 	public static String myAddr;
 	public static int myIndex;
 	
@@ -30,11 +30,12 @@ public class ServerInfo {
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
+		
 	}
 	
 	/* Server Farm 내의 각 서버에 대한 주소를 list.txt 파일에서 읽어 초기화 */
 	public void load_list() {
-		aliveServerMap = new HashMap<String, Integer>();
+		aliveServerMap = new TreeMap<String, Integer>();
 		totalServerList = new ArrayList<String>();
 		String addr ="";
 		
@@ -51,7 +52,6 @@ public class ServerInfo {
 	}
 	
 	public void init_index() {
-		myIndex = -1;
 		for(int i = 0 ; i < totalServerList.size(); i++) {
 			if(myAddr.equals(totalServerList.get(i).toString())) {
 				myIndex = i;
@@ -76,11 +76,11 @@ public class ServerInfo {
 		return isCoordinatorAlive;
 	}
 	
-	public static synchronized HashMap<String, Integer> getAliveServerMap() {
+	public static synchronized TreeMap<String, Integer> getAliveServerMap() {
 		return aliveServerMap;
 	}
 	
-	public static synchronized void setAliveServerMap(HashMap<String, Integer> temp) {
+	public static synchronized void setAliveServerMap(TreeMap<String, Integer> temp) {
 		aliveServerMap = temp;
 	}
 	

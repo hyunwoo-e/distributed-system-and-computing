@@ -13,7 +13,7 @@ public class ResourceManager extends PassiveQueue<Message> implements Runnable, 
 	
 	public synchronized void update_nodes() {
 		/* ConcurrentModification 해결을 위해 복사 */
-		HashMap<String, Integer> temp = (HashMap<String, Integer>)ServerInfo.getAliveServerMap().clone();
+		TreeMap<String, Integer> temp = (TreeMap<String, Integer>)ServerInfo.getAliveServerMap().clone();
 		
 		for(Map.Entry<String, Integer> entry : ServerInfo.getAliveServerMap().entrySet()) {
 			temp.put(entry.getKey(),entry.getValue() + 1);
